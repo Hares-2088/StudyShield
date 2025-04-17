@@ -2,7 +2,6 @@
     <div class="bg-white p-4 md:p-6 rounded-lg shadow-md mb-4 md:mb-6">
         <h2 class="text-lg md:text-xl font-semibold text-pink-700 mb-3 md:mb-4">Study Statistics</h2>
 
-        <!-- Statistics Cards from ShadCN UI - changed from 3 to 2 columns -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
             <Card>
                 <CardHeader class="pb-2">
@@ -29,8 +28,6 @@
                     <Progress class="mt-2" :value="(weeklyHours / 40) * 100" :class="{ 'bg-pink-300': true }" />
                 </CardContent>
             </Card>
-
-            <!-- Monthly Hours card removed -->
         </div>
 
         <!-- Today's Focus Time -->
@@ -106,8 +103,6 @@ const userStore = useUserStore();
 const focusTime = computed(() => userStore.focusTime);
 const dayStreak = computed(() => userStore.dayStreak || 0);
 const weeklyHours = computed(() => userStore.weeklyStudyHours || 0);
-// Removed monthly hours - no longer needed
-// const monthlyHours = computed(() => userStore.monthlyStudyHours || 0);
 
 // Calendar data and navigation
 interface CalendarDay {
@@ -219,50 +214,15 @@ const isStudyDay = (date: Date) => {
     return studyDays.value.includes(dateString);
 };
 
-// Fetch study days - expanded to include past months for navigation
+// Fetch study days from userStore (dates come as ISO strings)
 const fetchStudyDays = async () => {
-    // For demo purposes, we'll generate study days across multiple months
-    const mockStudyDays: string[] = [];
-    const today = new Date();
-
-    // Generate current streak days
-    for (let i = 0; i < dayStreak.value; i++) {
-        const date = new Date();
-        date.setDate(date.getDate() - i);
-        const dateString = formatDateString(date);
-        mockStudyDays.push(dateString);
-    }
-
-    // Generate some random days in current month
-    addRandomDaysToMonth(mockStudyDays, today.getFullYear(), today.getMonth() + 1, 5);
-
-    // Generate some random days in previous months (up to 3 months back)
-    for (let i = 1; i <= 3; i++) {
-        const pastMonth = today.getMonth() - i + 1;
-        const year = pastMonth <= 0 ? today.getFullYear() - 1 : today.getFullYear();
-        const month = pastMonth <= 0 ? pastMonth + 12 : pastMonth;
-        addRandomDaysToMonth(mockStudyDays, year, month, 8 - i);  // Fewer days the further back we go
-    }
-
-    studyDays.value = mockStudyDays;
-};
-
-// Helper function to add random study days to a specific month
-const addRandomDaysToMonth = (daysArray: string[], year: number, month: number, count: number) => {
-    const daysInMonth = new Date(year, month, 0).getDate();
-
-    for (let i = 0; i < count; i++) {
-        const day = Math.floor(Math.random() * daysInMonth) + 1;
-        const dateString = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-        if (!daysArray.includes(dateString)) {
-            daysArray.push(dateString);
-        }
-    }
-};
-
-// Helper function to format dates consistently
-const formatDateString = (date: Date): string => {
-    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+    studyDays.value = userStore.studyStats.map((stat: { date: string | Date }) => {
+        // If stat.date is a string, just slice; if Date, toISOString()
+        const iso = typeof stat.date === 'string'
+          ? stat.date
+          : stat.date.toISOString();
+        return iso.slice(0, 10); // "YYYY-MM-DD"
+    });
 };
 
 onMounted(() => {

@@ -1,51 +1,62 @@
 <script setup lang="ts">
-import { RouterView } from 'vue-router';
-import { ref, onMounted } from 'vue';
-import Navigation from './components/Navigation.vue';
-import { gsap } from 'gsap';
+import { RouterView, RouterLink } from 'vue-router'
+import { ref, onMounted } from 'vue'
+import Navigation from './components/Navigation.vue'
+import { gsap } from 'gsap'
 
-const isMobileMenuOpen = ref(false);
+// NEW imports for auto‑hydration
+import { useAuth } from '@/api/authService'
+import { useUserStore } from '@/stores/userStore'
 
+const isMobileMenuOpen = ref(false)
 const toggleMobileMenu = () => {
-  isMobileMenuOpen.value = !isMobileMenuOpen.value;
-};
+  isMobileMenuOpen.value = !isMobileMenuOpen.value
+}
 
-// Add particles animation
-onMounted(() => {
-  // Create particles
-  const particlesContainer = document.querySelector('.particles-container');
+// auto‑hydrate Pinia store
+const auth = useAuth()
+const userStore = useUserStore()
+
+onMounted(async () => {
+  const particlesContainer = document.querySelector('.particles-container')
   if (particlesContainer) {
     for (let i = 0; i < 20; i++) {
-      const particle = document.createElement('div');
-      particle.className = 'particle absolute rounded-full';
-
-      // Use your color palette
-      const colors = ['#cdb4db', '#ffc8dd', '#ffafcc', '#bde0fe', '#a2d2ff'];
-      const randomColor = colors[Math.floor(Math.random() * colors.length)];
-
+      const particle = document.createElement('div')
+      particle.className = 'particle absolute rounded-full'
+      const colors = ['#cdb4db', '#ffc8dd', '#ffafcc', '#bde0fe', '#a2d2ff']
       Object.assign(particle.style, {
         width: `${Math.random() * 6 + 2}px`,
         height: `${Math.random() * 6 + 2}px`,
-        background: randomColor,
+        background: colors[Math.floor(Math.random() * colors.length)],
         left: `${Math.random() * 100}%`,
         top: `${Math.random() * 100}%`,
         opacity: Math.random() * 0.6 + 0.1
-      });
-
-      particlesContainer.appendChild(particle);
-
-      // Animate each particle
+      })
+      particlesContainer.appendChild(particle)
       gsap.to(particle, {
         x: `${Math.random() * 200 - 100}px`,
         y: `${Math.random() * 200 - 100}px`,
         duration: Math.random() * 20 + 10,
         repeat: -1,
         yoyo: true,
-        ease: "sine.inOut"
-      });
+        ease: 'sine.inOut'
+      })
     }
   }
-});
+
+  if (auth.checkAuth()) {
+    try {
+      await auth.fetchUser()                      
+      const me = auth.user.value
+      if (me?.id) {
+        await userStore.fetchUserData()
+        await userStore.fetchStudySessions()
+      }
+    } catch (err) {
+      console.error('Failed to hydrate on start:', err)
+    }
+  }
+})
 </script>
 
 <template>

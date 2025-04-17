@@ -1,39 +1,47 @@
 // src/api/authService.ts
 import apiClient from './apiClient';
 import { ref } from 'vue';
+import type { User } from '../models/User';
+import { useUserStore } from '@/stores/userStore';
+import { useRouter } from 'vue-router';
 
 const isAuthenticated = ref(false);
-const user = ref(null);
+const user = ref<User | null>(null)
 
 export function useAuth() {
+    const userStore = useUserStore();
+    const router = useRouter();
 
     const login = async (email: string, password: string) => {
         try {
-          // build the form body
-          const params = new URLSearchParams();
-          params.append('username', email);
-          params.append('password', password);
-      
-          // explicitly tell axios to send form data
-          const response = await apiClient.post(
-            '/auth/token',
-            params.toString(),                // serialize to "username=…&password=…"
-            {
-              headers: {
-                'Content-Type': 'application/x-www-form-urlencoded'
-              }
-            }
-          );
-      
-          localStorage.setItem('access_token', response.data.access_token);
-          isAuthenticated.value = true;
-          await fetchUser();
-          return true;
+            // build the form body
+            const params = new URLSearchParams();
+            params.append('username', email);
+            params.append('password', password);
+
+            // explicitly tell axios to send form data
+            const response = await apiClient.post(
+                '/auth/token',
+                params.toString(),
+                {
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    }
+                }
+            );
+
+            localStorage.setItem('access_token', response.data.access_token);
+            isAuthenticated.value = true;
+
+            // Fetch user data and update the userStore
+            await userStore.fetchUserData();
+
+            return true;
         } catch (error: any) {
-          console.error('Login failed:', error.response?.data || error.message);
-          throw new Error(error.response?.data?.detail || 'Login failed');
+            console.error('Login failed:', error.response?.data || error.message);
+            throw new Error(error.response?.data?.detail || 'Login failed');
         }
-      };      
+    };
 
     const register = async (email: string, password: string) => {
         try {
@@ -52,6 +60,7 @@ export function useAuth() {
         localStorage.removeItem('access_token');
         isAuthenticated.value = false;
         user.value = null;
+        router.push('/login'); // Redirect to login page
     };
 
     const checkAuth = () => {
@@ -62,8 +71,31 @@ export function useAuth() {
 
     const fetchUser = async () => {
         try {
-            const response = await apiClient.get('/users/me');
-            user.value = response.data;
+            const response = await apiClient.get<any>('/users/me');
+            const d = response.data
+
+            // now build a proper camelCase User
+            user.value = {
+                id: d._id,
+                name: d.name,
+                email: d.email,
+                coins: d.coins,
+                dayStreak: d.day_streak,
+                longestStreak: d.longest_streak,
+                lastActiveDate: d.last_active_date,
+                challenges: d.challenges,
+                milestones: d.milestones,
+                purchasedItems: d.purchased_items,
+                blockedWebsites: d.blocked_websites,
+                totalFocusTime: d.total_focus_time,
+                weeklyFocusTime: d.weekly_focus_time,
+                monthlyFocusTime: d.monthly_focus_time,
+                studyStats: d.study_stats,
+                isPhoneLockEnabled: d.is_phone_lock_enabled ?? false,
+                isActive: d.is_active,
+                role: d.role,
+                lastLogin: d.last_login
+            }
             console.log('User fetched:', user.value);
         } catch (error) {
             console.error('Failed to fetch user:', error);

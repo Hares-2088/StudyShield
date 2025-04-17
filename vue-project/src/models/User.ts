@@ -33,11 +33,12 @@ export interface User {
     challenges: ChallengeProgress[];
     milestones: MilestoneProgress[];
     purchasedItems: ShopItem[];
-    blockedWebsites: string[];
+    blockedWebsites: string[];          // matches the API field
     totalFocusTime: number; // in minutes
     weeklyFocusTime: number;
     monthlyFocusTime: number;
     studyStats: StudyStat[];
+    isPhoneLockEnabled: boolean;
     isActive?: boolean; // Optional, for admin functionality
     role?: 'user' | 'admin'; // Optional, for role-based functionality
     lastLogin?: string; // ISO string, optional

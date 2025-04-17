@@ -1,13 +1,16 @@
 import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
-import axios from 'axios';
+import apiClient from '@/api/apiClient';
+import { useRouter } from 'vue-router';
+
 import type { User, ChallengeProgress, MilestoneProgress, StudyStat } from '../models/User';
 import type { ShopItem } from '../models/ShopItem';
 import type { StudySession } from '../models/StudySession';
 
-const backendUrl = import.meta.env.VITE_FAST_API_URI; // Use Vite's environment variable system
+const backendUrl = import.meta.env.VITE_FAST_API_URI;
 
 export const useUserStore = defineStore('user', () => {
+  const router = useRouter();
   const user = ref<User | null>(null);
   const blockedSites = ref<string[]>([]);
   const challenges = ref<ChallengeProgress[]>([]);
@@ -24,30 +27,68 @@ export const useUserStore = defineStore('user', () => {
 
   const isLoggedIn = computed(() => !!user.value);
 
-  const fetchUserData = async (userId: string) => {
+  const fetchUserData = async () => {
     try {
-      const response = await axios.get(`${backendUrl}/users/${userId}`);
-      user.value = response.data;
-      blockedSites.value = response.data.blockedSites || [];
-      challenges.value = response.data.challenges || [];
-      milestones.value = response.data.milestones || [];
-      purchasedItems.value = response.data.purchasedItems || [];
-      studyStats.value = response.data.studyStats || [];
-      isPhoneLockEnabled.value = response.data.isPhoneLockEnabled || false;
-      focusTime.value = response.data.focusTime || 0;
-      dayStreak.value = response.data.dayStreak || 0;
-      weeklyStudyHours.value = response.data.weeklyStudyHours || 0;
-      monthlyStudyHours.value = response.data.monthlyStudyHours || 0;
-      coins.value = response.data.coins || 0;
+      const response = await apiClient.get<any>(`/users/me`)
+      const d = response.data
+
+      user.value = {
+        id: d._id,
+        name: d.name,
+        email: d.email,
+        coins: d.coins,
+        dayStreak: d.day_streak,
+        longestStreak: d.longest_streak,
+        lastActiveDate: d.last_active_date,
+        challenges: d.challenges,
+        milestones: d.milestones,
+        purchasedItems: d.purchased_items,
+        blockedWebsites: d.blocked_websites,
+        totalFocusTime: d.total_focus_time,
+        weeklyFocusTime: d.weekly_focus_time,
+        monthlyFocusTime: d.monthly_focus_time,
+        studyStats: d.study_stats,
+        isPhoneLockEnabled: d.is_phone_lock_enabled ?? false,
+        isActive: d.is_active,
+        role: d.role,
+        lastLogin: d.last_login
+      }
+
+      // now populate your other refs off that same `user.value`
+      blockedSites.value = user.value.blockedWebsites
+      challenges.value = user.value.challenges
+      milestones.value = user.value.milestones
+      purchasedItems.value = user.value.purchasedItems
+      studyStats.value = user.value.studyStats
+      focusTime.value = user.value.totalFocusTime
+      dayStreak.value = user.value.dayStreak
+      weeklyStudyHours.value = user.value.weeklyFocusTime
+      monthlyStudyHours.value = user.value.monthlyFocusTime
+      coins.value = user.value.coins
+      isPhoneLockEnabled.value = user.value.isPhoneLockEnabled
+
     } catch (error) {
-      console.error('Error fetching user data:', error);
+      console.error('Error fetching user data:', error)
+    }
+  }
+
+  const initializeStore = async () => {
+    if (localStorage.getItem('access_token')) {
+      try {
+        await fetchUserData();
+      } catch (error) {
+        console.error('Error initializing store:', error);
+      }
     }
   };
 
-  const fetchStudySessions = async (userId: string) => {
+  // Call initializeStore when the store is created
+  initializeStore();
+
+  const fetchStudySessions = async () => {
     try {
-      const response = await axios.get(`${backendUrl}/users/${userId}/study-sessions`);
-      studySessions.value = response.data;
+      const { data } = await apiClient.get<StudySession[]>('/study-sessions');
+      studySessions.value = data;
     } catch (error) {
       console.error('Error fetching study sessions:', error);
     }
@@ -55,7 +96,7 @@ export const useUserStore = defineStore('user', () => {
 
   const createStudySession = async (session: Partial<StudySession>) => {
     try {
-      const response = await axios.post(`${backendUrl}/users/${user.value?.id}/study-sessions`, session);
+      const response = await apiClient.post(`/users/${user.value?.id}/study-sessions`, session);
       studySessions.value.push(response.data);
     } catch (error) {
       console.error('Error creating study session:', error);
@@ -64,7 +105,7 @@ export const useUserStore = defineStore('user', () => {
 
   const updateStudySession = async (sessionId: string, updates: Partial<StudySession>) => {
     try {
-      const response = await axios.patch(`${backendUrl}/users/${user.value?.id}/study-sessions/${sessionId}`, updates);
+      const response = await apiClient.patch(`/users/${user.value?.id}/study-sessions/${sessionId}`, updates);
       const index = studySessions.value.findIndex((s) => s.id === sessionId);
       if (index !== -1) {
         studySessions.value[index] = response.data;
@@ -76,7 +117,7 @@ export const useUserStore = defineStore('user', () => {
 
   const addCoins = async (amount: number) => {
     try {
-      const response = await axios.post(`${backendUrl}/users/${user.value?.id}/add-coins`, { amount });
+      const response = await apiClient.post(`/users/${user.value?.id}/add-coins`, { amount });
       user.value = response.data;
       coins.value = response.data.coins;
     } catch (error) {
@@ -86,7 +127,7 @@ export const useUserStore = defineStore('user', () => {
 
   const updateChallengeProgress = async (challengeId: string, progress: number) => {
     try {
-      const response = await axios.post(`${backendUrl}/users/${user.value?.id}/challenges/${challengeId}/progress`, { progress });
+      const response = await apiClient.post(`/users/${user.value?.id}/challenges/${challengeId}/progress`, { progress });
       const updatedChallenge = response.data;
       const index = challenges.value.findIndex((c) => c.challengeId === challengeId);
       if (index !== -1) {
@@ -101,9 +142,9 @@ export const useUserStore = defineStore('user', () => {
 
   const claimMilestoneTier = async (milestoneId: string, tierName: string) => {
     try {
-      const response = await axios.post(`${backendUrl}/users/${user.value?.id}/milestones/${milestoneId}/claim-tier`, { tier_name: tierName });
+      const response = await apiClient.post(`/users/${user.value?.id}/milestones/${milestoneId}/claim-tier`, { tier_name: tierName });
       console.log(response.data.message);
-      await fetchUserData(user.value?.id || '');
+      await fetchUserData();
     } catch (error) {
       console.error('Error claiming milestone tier:', error);
     }
@@ -111,9 +152,9 @@ export const useUserStore = defineStore('user', () => {
 
   const purchaseShopItem = async (itemId: string) => {
     try {
-      const response = await axios.post(`${backendUrl}/users/${user.value?.id}/shop/items/${itemId}/purchase`);
+      const response = await apiClient.post(`/users/${user.value?.id}/shop/items/${itemId}/purchase`);
       console.log(response.data.message);
-      await fetchUserData(user.value?.id || '');
+      await fetchUserData();
     } catch (error) {
       console.error('Error purchasing shop item:', error);
     }
@@ -121,8 +162,8 @@ export const useUserStore = defineStore('user', () => {
 
   const updateFocusTime = async (minutes: number) => {
     try {
-      await axios.post(`${backendUrl}/users/${user.value?.id}/stats/update-focus`, { minutes });
-      await fetchUserData(user.value?.id || '');
+      await apiClient.post(`/users/${user.value?.id}/stats/update-focus`, { minutes });
+      await fetchUserData();
     } catch (error) {
       console.error('Error updating focus time:', error);
     }
@@ -130,7 +171,7 @@ export const useUserStore = defineStore('user', () => {
 
   const addBlockedSite = async (site: string) => {
     try {
-      await axios.post(`${backendUrl}/users/${user.value?.id}/blocked-websites/add`, { website: site });
+      await apiClient.post(`/users/${user.value?.id}/blocked-websites/add`, { website: site });
       blockedSites.value.push(site);
     } catch (error) {
       console.error('Error adding blocked site:', error);
@@ -139,7 +180,7 @@ export const useUserStore = defineStore('user', () => {
 
   const removeBlockedSite = async (site: string) => {
     try {
-      await axios.delete(`${backendUrl}/users/${user.value?.id}/blocked-websites/remove`, { data: { website: site } });
+      await apiClient.delete(`/users/${user.value?.id}/blocked-websites/remove`, { data: { website: site } });
       blockedSites.value = blockedSites.value.filter((s) => s !== site);
     } catch (error) {
       console.error('Error removing blocked site:', error);
@@ -161,6 +202,7 @@ export const useUserStore = defineStore('user', () => {
     coins.value = 0;
     studySessions.value = [];
     console.log('Logged out locally');
+    router.push('/login'); // Redirect to login page
   };
 
   return {
