@@ -1,11 +1,10 @@
-from beanie import PydanticObjectId
 from fastapi import APIRouter, HTTPException, Depends
 from auth.dependencies import get_current_user
-from models.User import User, ChallengeProgress, MilestoneProgress, StudyStat
+from models.User import User, ChallengeProgress, MilestoneProgress, StudyStat, UserRole
 from models.Challenge import Challenge, ChallengeType
 from models.Milestone import Milestone
 from models.ShopItem import ShopItem
-from typing import List, Optional
+from typing import List
 from datetime import datetime, timedelta
 from pydantic import BaseModel
 from bson import ObjectId
@@ -43,7 +42,7 @@ async def read_current_user(current_user: User = Depends(get_current_user)):
 
 @router.get("/", response_model=List[User])
 async def get_users(current_user: User = Depends(get_current_user)):
-    if not current_user.is_admin:
+    if not current_user.role == UserRole.ADMIN:
         raise HTTPException(status_code=403, detail="Admin access required")
     return await User.find_all().to_list()
 
@@ -53,7 +52,7 @@ async def get_user(
         user_id: str,
         current_user: User = Depends(get_current_user)
 ):
-    if str(current_user.id) != user_id and not current_user.is_admin:
+    if str(current_user.id) != user_id and not current_user.role == UserRole.ADMIN:
         raise HTTPException(status_code=403, detail="Can only view your own profile")
     return await get_user_or_404(user_id)
 
@@ -63,7 +62,7 @@ async def create_user(
         user: User,
         current_user: User = Depends(get_current_user)
 ):
-    if not current_user.is_admin:
+    if not current_user.role == UserRole.ADMIN:
         raise HTTPException(status_code=403, detail="Admin access required")
 
     existing_user = await User.find_one(User.email == user.email)
@@ -80,7 +79,7 @@ async def add_coins(
         request: AddCoinsRequest,
         current_user: User = Depends(get_current_user)
 ):
-    if not current_user.is_admin:
+    if not current_user.role == UserRole.ADMIN:
         raise HTTPException(status_code=403, detail="Admin access required")
 
     user = await get_user_or_404(user_id)
@@ -95,7 +94,7 @@ async def get_user_challenges(
         user_id: str,
         current_user: User = Depends(get_current_user)
 ):
-    if str(current_user.id) != user_id and not current_user.is_admin:
+    if str(current_user.id) != user_id and not current_user.role == UserRole.ADMIN:
         raise HTTPException(status_code=403, detail="Can only view your own challenges")
 
     user = await get_user_or_404(user_id)
@@ -152,7 +151,7 @@ async def get_user_milestones(
         user_id: str,
         current_user: User = Depends(get_current_user)
 ):
-    if str(current_user.id) != user_id and not current_user.is_admin:
+    if str(current_user.id) != user_id and not current_user.role == UserRole.ADMIN:
         raise HTTPException(status_code=403, detail="Can only view your own milestones")
 
     user = await get_user_or_404(user_id)
@@ -245,7 +244,7 @@ async def get_user_stats(
         user_id: str,
         current_user: User = Depends(get_current_user)
 ):
-    if str(current_user.id) != user_id and not current_user.is_admin:
+    if str(current_user.id) != user_id and not current_user.role == UserRole.ADMIN:
         raise HTTPException(status_code=403, detail="Can only view your own stats")
 
     user = await get_user_or_404(user_id)
@@ -304,7 +303,7 @@ async def get_blocked_websites(
         user_id: str,
         current_user: User = Depends(get_current_user)
 ):
-    if str(current_user.id) != user_id and not current_user.is_admin:
+    if str(current_user.id) != user_id and not current_user.role == UserRole.ADMIN:
         raise HTTPException(status_code=403, detail="Can only view your own blocked sites")
 
     user = await get_user_or_404(user_id)

@@ -60,7 +60,6 @@ app.include_router(milestone_router)
 app.include_router(study_session_router)
 app.include_router(auth_router)
 
-print(app.routes)  # Add this temporarily to see all registered routes
 
 async def seed_initial_data():
     try:
