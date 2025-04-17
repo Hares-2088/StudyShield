@@ -1,0 +1,13 @@
+website 
+chrome extension
+phone mode on the web app to lock your phone
+
+
+for the color palette it will be:
+cdb4db
+ffc8dd
+ffafcc
+bde0fe
+a2d2ff  
+
+db password: 2sHpSc2beiRTd6zX

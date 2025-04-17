@@ -1,0 +1,103 @@
+/* Updated color palette from your selection */
+:root {
+  --vt-c-white: #ffffff;
+  --vt-c-white-soft: #f8f8f8;
+  --vt-c-white-mute: #f2f2f2;
+
+  --vt-c-black: #181818;
+  --vt-c-black-soft: #222222;
+  --vt-c-black-mute: #282828;
+
+  /* Your custom color palette */
+  --vt-c-blue-light: #A2D2FF;
+  --vt-c-blue-medium: #BDE0FE;
+  --vt-c-pink-bright: #FFAFCC;
+  --vt-c-pink-soft: #FFC8DD;
+  --vt-c-lavender: #CDB4DB;
+
+  /* Updated divider colors using your palette */
+  --vt-c-divider-light-1: rgba(255, 175, 204, 0.29); /* FFAFCC with opacity */
+  --vt-c-divider-light-2: rgba(255, 175, 204, 0.12);
+  --vt-c-divider-dark-1: rgba(189, 224, 254, 0.65); /* BDE0FE with opacity */
+  --vt-c-divider-dark-2: rgba(189, 224, 254, 0.48);
+
+  /* Text colors */
+  --vt-c-text-light-1: var(--vt-c-black);
+  --vt-c-text-light-2: rgba(24, 24, 24, 0.66);
+  --vt-c-text-dark-1: var(--vt-c-white);
+  --vt-c-text-dark-2: rgba(255, 255, 255, 0.8);
+}
+
+/* semantic color variables for this project */
+:root {
+  --color-background: var(--vt-c-white);
+  --color-background-soft: var(--vt-c-white-soft);
+  --color-background-mute: var(--vt-c-white-mute);
+
+  --color-border: var(--vt-c-divider-light-2);
+  --color-border-hover: var(--vt-c-divider-light-1);
+
+  --color-heading: var(--vt-c-text-light-1);
+  --color-text: var(--vt-c-text-light-1);
+
+  /* Your accent colors */
+  --color-primary: var(--vt-c-pink-bright);
+  --color-secondary: var(--vt-c-blue-light);
+  --color-accent: var(--vt-c-lavender);
+
+  --section-gap: 160px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-background: var(--vt-c-black);
+    --color-background-soft: var(--vt-c-black-soft);
+    --color-background-mute: var(--vt-c-black-mute);
+
+    --color-border: var(--vt-c-divider-dark-2);
+    --color-border-hover: var(--vt-c-divider-dark-1);
+
+    --color-heading: var(--vt-c-text-dark-1);
+    --color-text: var(--vt-c-text-dark-2);
+
+    /* Dark mode variants of your colors */
+    --color-primary: var(--vt-c-pink-soft);
+    --color-secondary: var(--vt-c-blue-medium);
+    --color-accent: var(--vt-c-lavender);
+  }
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  font-weight: normal;
+}
+
+body {
+  min-height: 100vh;
+  color: var(--color-text);
+  background: var(--color-background);
+  transition:
+    color 0.5s,
+    background-color 0.5s;
+  line-height: 1.6;
+  font-family:
+    Inter,
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    Roboto,
+    Oxygen,
+    Ubuntu,
+    Cantarell,
+    'Fira Sans',
+    'Droid Sans',
+    'Helvetica Neue',
+    sans-serif;
+  font-size: 15px;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}

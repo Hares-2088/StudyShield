@@ -1,0 +1,33 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import './base.css';
+
+/* Add your color palette to Tailwind */
+@layer base {
+  :root {
+    --color-primary: 255 175 204; /* #FFAFCC */
+    --color-secondary: 162 210 255; /* #A2D2FF */
+    --color-accent: 189 224 254; /* #BDE0FE */
+    --color-pink-soft: 255 200 221; /* #FFC8DD */
+    --color-lavender: 205 180 219; /* #CDB4DB */
+  }
+}
+
+#app {
+  font-weight: normal;
+}
+
+@media (min-width: 1024px) {
+  body {
+    display: flex;
+    place-items: center;
+  }
+
+  #app {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    padding: 0 2rem;
+  }
+}

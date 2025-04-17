@@ -1,0 +1,49 @@
+body {
+    font-family: 'Comic Neue', cursive;
+    background-color: #ffebee; /* Light pink */
+    color: #880e4f; /* Dark pink */
+    margin: 0;
+    padding: 10px;
+  }
+  
+  .container {
+    text-align: center;
+  }
+  
+  h1 {
+    font-size: 24px;
+    margin-bottom: 10px;
+  }
+  
+  #blocked-sites {
+    margin-top: 20px;
+  }
+  
+  #site-list {
+    list-style-type: none;
+    padding: 0;
+  }
+  
+  #site-list li {
+    background-color: #f8bbd0; /* Lighter pink */
+    margin: 5px 0;
+    padding: 5px;
+    border-radius: 5px;
+  }
+  
+  input, button {
+    margin-top: 10px;
+    padding: 5px;
+    border: none;
+    border-radius: 5px;
+  }
+  
+  button {
+    background-color: #ec407a; /* Bright pink */
+    color: white;
+    cursor: pointer;
+  }
+  
+  button:hover {
+    background-color: #d81b60; /* Darker pink */
+  }
