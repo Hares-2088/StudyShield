@@ -53,16 +53,16 @@ const router = createRouter({
   routes
 });
 
-router.beforeEach((to, from, next) => {
-  const { checkAuth, isAuthenticated } = useAuth();
-  const isAuth = checkAuth();
+router.beforeEach(async (to, from, next) => {
+  const { checkAuth } = useAuth();
+  const isAuth = await checkAuth(); // Ensure checkAuth is awaited if it returns a Promise
 
   if (to.meta.requiresAuth && !isAuth) {
-    next('/login');
+    next('/login'); // Redirect to login if not authenticated
   } else if ((to.path === '/login' || to.path === '/register') && isAuth) {
-    next('/dashboard');
+    next('/dashboard'); // Redirect to dashboard if already authenticated
   } else {
-    next();
+    next(); // Allow navigation for other cases
   }
 });
 
