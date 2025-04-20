@@ -173,6 +173,7 @@ export const useUserStore = defineStore('user', () => {
     try {
       await apiClient.post(`/users/${user.value?.id}/blocked-websites/add`, { website: site });
       blockedSites.value.push(site);
+      console.log(`Blocked site "${site}" added successfully.`);
     } catch (error) {
       console.error('Error adding blocked site:', error);
     }
@@ -180,8 +181,11 @@ export const useUserStore = defineStore('user', () => {
 
   const removeBlockedSite = async (site: string) => {
     try {
-      await apiClient.delete(`/users/${user.value?.id}/blocked-websites/remove`, { data: { website: site } });
+      await apiClient.delete(`/users/${user.value?.id}/blocked-websites/remove`, {
+        params: { website: site } // Send as query parameter
+      });
       blockedSites.value = blockedSites.value.filter((s) => s !== site);
+      console.log(`Blocked site "${site}" removed successfully.`);
     } catch (error) {
       console.error('Error removing blocked site:', error);
     }

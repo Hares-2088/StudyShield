@@ -219,13 +219,20 @@ const fetchStudyDays = async () => {
     studyDays.value = userStore.studyStats.map((stat: { date: string | Date }) => {
         // If stat.date is a string, just slice; if Date, toISOString()
         const iso = typeof stat.date === 'string'
-          ? stat.date
-          : stat.date.toISOString();
+            ? stat.date
+            : stat.date.toISOString();
         return iso.slice(0, 10); // "YYYY-MM-DD"
     });
+    console.log('Study Days:', studyDays.value);
+    console.log('Study Stats:', userStore.studyStats);
 };
 
-onMounted(() => {
+onMounted(async () => {
+    if (!userStore.user) {
+        await userStore.fetchUserData();
+    }
+
+    // Fetch study days and generate calendar days
     fetchStudyDays();
     generateCalendarDays();
 });
