@@ -1,9 +1,9 @@
 export interface ShopItem {
-    id: string;
+    _id: string;
     title: string;
     description?: string;
     price: number;
-    imageUrl: string;
+    image_url: string;
     category?: string;
-    isFeatured?: boolean;
+    is_featured?: boolean;
 }

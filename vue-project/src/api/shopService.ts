@@ -4,12 +4,12 @@ import type { ShopItem } from '@/models/ShopItem';
 export default {
     async getShopItems(
         category?: string,
-        isFeatured?: boolean
+        is_featured?: boolean
     ): Promise<ShopItem[]> {
         const response = await apiClient.get('/shop/items', {
             params: {
                 category,
-                is_featured: isFeatured,
+                is_featured: is_featured,
             },
         });
         return response.data;

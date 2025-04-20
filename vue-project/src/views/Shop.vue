@@ -7,16 +7,18 @@
                     Study Shield Shop 🛍️
                 </h1>
             </div>
-            
+
             <!-- Coin Balance with Glass Effect -->
-            <div class="flex items-center bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full shadow-lg border border-white/20">
+            <div
+                class="flex items-center bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full shadow-lg border border-white/20">
                 <span class="text-2xl mr-2">🪙</span>
                 <span class="font-bold text-white drop-shadow-md">{{ coins.toLocaleString() }}</span>
             </div>
         </div>
 
         <!-- Success Notification -->
-        <div v-if="purchaseSuccess" class="bg-[#BDE0FE]/90 backdrop-blur-sm border-l-4 border-[#A2D2FF] text-[#1a1a1a] p-4 mb-6 rounded-lg shadow-md flex justify-between items-center">
+        <div v-if="purchaseSuccess"
+            class="bg-[#BDE0FE]/90 backdrop-blur-sm border-l-4 border-[#A2D2FF] text-[#1a1a1a] p-4 mb-6 rounded-lg shadow-md flex justify-between items-center">
             <div class="flex items-center">
                 <span class="text-xl mr-3">🎉</span>
                 <p class="font-medium">Item purchased successfully! Enjoy your new item.</p>
@@ -28,14 +30,8 @@
 
         <!-- Shop Items Grid -->
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            <ShopItem 
-                v-for="item in shopItems" 
-                :key="item.id" 
-                :item="item" 
-                :coins="coins" 
-                @purchase="purchaseItem" 
-                class="transition-all hover:scale-[1.02] hover:shadow-xl"
-            />
+            <ShopItem v-for="item in shopItems" :key="item.id" :item="item" :coins="coins" @purchase="purchaseItem"
+                class="transition-all hover:scale-[1.02] hover:shadow-xl" />
         </div>
 
         <!-- Empty State -->
@@ -44,8 +40,10 @@
                 <span class="text-4xl">🛒</span>
             </div>
             <h3 class="text-xl font-bold text-[#FFAFCC] mb-2">Shop is Empty</h3>
-            <p class="text-[#A2D2FF] max-w-md mx-auto">No items available right now. Check back later for new study goodies!</p>
-            <button class="mt-4 px-6 py-2 bg-gradient-to-r from-[#FFAFCC] to-[#CDB4DB] text-white rounded-full shadow-md hover:shadow-lg transition-all">
+            <p class="text-[#A2D2FF] max-w-md mx-auto">No items available right now. Check back later for new study
+                goodies!</p>
+            <button
+                class="mt-4 px-6 py-2 bg-gradient-to-r from-[#FFAFCC] to-[#CDB4DB] text-white rounded-full shadow-md hover:shadow-lg transition-all">
                 Notify Me
             </button>
         </div>
@@ -53,79 +51,57 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { useUserStore } from '../stores/userStore';
 import ShopItem from '../components/ShopItem.vue';
+import shopApi from '@/api/shopService';
+
+interface IShopItem {
+    id: string;
+    title: string;
+    description?: string;
+    price: number;
+    image: string;
+    category?: string;
+    is_featured?: boolean;
+}
 
 const userStore = useUserStore();
 const coins = computed(() => userStore.coins);
 const purchaseSuccess = ref(false);
 
-interface ShopItem {
-    id: string;
-    title: string;
-    image: string;
-    price: number;
-    description?: string;
-}
+const shopItems = ref<IShopItem[]>([]);
 
-const shopItems = ref<ShopItem[]>([
-    {
-        id: '1',
-        title: 'Study Shield Premium',
-        image: 'https://images.unsplash.com/photo-1434030216411-0b793f4b4173?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1470&q=80',
-        price: 100,
-        description: 'Unlock all premium features of Study Shield'
-    },
-    {
-        id: '2',
-        title: 'Custom Study Theme',
-        image: 'https://images.unsplash.com/photo-1497032628192-86f99bcd76bc?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1470&q=80',
-        price: 50,
-        description: 'Personalize your Study Shield experience'
-    },
-    {
-        id: '3',
-        title: 'Virtual Study Buddy',
-        image: 'https://images.unsplash.com/photo-1581078426770-6d336e5de7bf?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1470&q=80',
-        price: 75,
-        description: 'Get a virtual study companion to keep you motivated'
-    },
-    {
-        id: '4',
-        title: 'Focus Music Pack',
-        image: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1470&q=80',
-        price: 30,
-        description: 'Collection of focus-enhancing music tracks'
-    },
-    {
-        id: '5',
-        title: 'Digital Productivity Planner',
-        image: 'https://images.unsplash.com/photo-1506784983877-45594efa4cbe?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1468&q=80',
-        price: 45,
-        description: 'Advanced digital planner for optimal productivity'
-    },
-    {
-        id: '6',
-        title: 'Study Achievement Badges',
-        image: 'https://images.unsplash.com/photo-1533928298208-27ff66555d8d?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1470&q=80',
-        price: 25,
-        description: 'Unlock exclusive profile badges for study achievements'
+onMounted(async () => {
+    console.log('Fetching shop items...');
+    try {
+        const items = await shopApi.getShopItems();
+        shopItems.value = items.map(i => ({
+            id: i._id,                     
+            title: i.title,
+            description: i.description,
+            price: i.price,
+            image: i.image_url, // Ensure this maps correctly to the image property
+            category: i.category,
+            is_featured: i.is_featured,
+        }));
+        console.log('Shop items fetched successfully:', shopItems.value);
+    } catch (err) {
+        console.error('Error fetching shop items:', err);
     }
-]);
+});
 
-const purchaseItem = async (item: ShopItem) => {
-    if (coins.value >= item.price) {
-        try {
-            await userStore.addCoins(-item.price);
-            purchaseSuccess.value = true;
-            
-            setTimeout(() => {
-                purchaseSuccess.value = false;
-            }, 5000);
-        } catch (error) {
-            console.error('Failed to purchase item:', error);
-        }
+const purchaseItem = async (item: IShopItem) => {
+    console.log('Attempting to purchase item:', item);
+    try {
+        await userStore.purchaseShopItem(item.id);
+        console.log('Item purchased successfully:', item);
+        purchaseSuccess.value = true;
+        setTimeout(() => {
+            purchaseSuccess.value = false;
+        }, 5000);
+    } catch (error) {
+        console.error('Failed to purchase item:', error);
     }
 };
 </script>
