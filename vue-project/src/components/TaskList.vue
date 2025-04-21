@@ -18,13 +18,13 @@
               class="h-4 w-4 rounded border-pink-300 text-pink-600 focus:ring-pink-500 mr-3"
             >
             <div>
-              <h3 class="text-sm font-medium" :class="{ 'line-through text-gray-500': task.completed }">
+              <h3 class="text-sm font-medium text-gray-900" :class="{ 'line-through text-gray-500': task.completed }">
                 {{ task.name }}
               </h3>
               <p class="text-xs text-gray-600">{{ task.duration }} minutes</p>
             </div>
           </div>
-          <button 
+          <button   
             @click="$emit('remove-task', index)"
             class="text-pink-500 hover:text-pink-700 transition-colors"
           >

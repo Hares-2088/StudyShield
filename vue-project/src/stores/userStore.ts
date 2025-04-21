@@ -129,7 +129,7 @@ export const useUserStore = defineStore('user', () => {
     try {
       const response = await apiClient.post(`/users/${user.value?.id}/challenges/${challengeId}/progress`, { progress });
       const updatedChallenge = response.data;
-      const index = challenges.value.findIndex((c) => c.challengeId === challengeId);
+      const index = challenges.value.findIndex((c) => c.challenge_id === challengeId);
       if (index !== -1) {
         challenges.value[index] = updatedChallenge;
       } else {
@@ -140,9 +140,9 @@ export const useUserStore = defineStore('user', () => {
     }
   };
 
-  const claimMilestoneTier = async (milestoneId: string, tierName: string) => {
+  const claimMilestoneTier = async (_id: string, tierName: string) => {
     try {
-      const response = await apiClient.post(`/users/${user.value?.id}/milestones/${milestoneId}/claim-tier`, { tier_name: tierName });
+      const response = await apiClient.post(`/users/${user.value?.id}/milestones/${_id}/claim-tier`, { tier_name: tierName });
       console.log(response.data.message);
       await fetchUserData();
     } catch (error) {

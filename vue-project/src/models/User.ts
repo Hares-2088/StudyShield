@@ -2,17 +2,17 @@ import type { ShopItem } from './ShopItem';
 import type { TierName } from './Milestone';
 
 export interface ChallengeProgress {
-    challengeId: string; // ID of the challenge
+    challenge_id: string; // ID of the challenge
     progress: number;
-    isCompleted: boolean;
-    lastUpdated: string; // ISO string
+    is_completed: boolean;
+    last_updated: string; // ISO string
 }
 
 export interface MilestoneProgress {
-    milestoneId: string; // ID of the milestone
+    _id: string; // ID of the milestone
     progress: number;
-    currentTier?: TierName;
-    nextGoal?: number;
+    current_tier?: TierName;
+    next_goal?: number;
 }
 
 export interface StudyStat {

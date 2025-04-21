@@ -1,6 +1,5 @@
 from beanie import Document
 from typing import Optional, Dict
-from datetime import timedelta
 from enum import Enum
 from pydantic import BaseModel
 

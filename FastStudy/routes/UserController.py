@@ -37,8 +37,33 @@ class UpdateFocusTimeRequest(BaseModel):
 # User profile endpoints
 @router.get("/me", response_model=User)
 async def read_current_user(current_user: User = Depends(get_current_user)):
-    return current_user
+    now = datetime.utcnow()
 
+    # 1) update last_active_date
+    current_user.last_active_date = now
+
+    # 2) recalc weekly and monthly from study_stats
+    week_ago  = now - timedelta(days=7)
+    month_ago = now - timedelta(days=30)
+
+    # sum up focus_time in those windows
+    weekly = sum(
+        stat.focus_time
+        for stat in current_user.study_stats
+        if stat.date >= week_ago
+    )
+    monthly = sum(
+        stat.focus_time
+        for stat in current_user.study_stats
+        if stat.date >= month_ago
+    )
+
+    current_user.weekly_focus_time  = weekly
+    current_user.monthly_focus_time = monthly
+
+    # 3) save and return
+    await current_user.save()
+    return current_user 
 
 @router.get("/", response_model=List[User])
 async def get_users(current_user: User = Depends(get_current_user)):

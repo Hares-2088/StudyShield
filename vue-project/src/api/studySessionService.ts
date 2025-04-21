@@ -26,12 +26,12 @@ export default {
 
   async completeStudySession(
     sessionId: string,
-    actualDuration: number,
+    actual_duration: number,
     distractionsBlocked: number = 0,
     notes?: string
   ): Promise<void> {
     await apiClient.post(`/study-sessions/${sessionId}/complete`, {
-      actual_duration: actualDuration,
+      actual_duration: actual_duration,
       distractions_blocked: distractionsBlocked,
       notes
     });
