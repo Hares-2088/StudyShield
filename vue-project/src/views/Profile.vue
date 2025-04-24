@@ -101,7 +101,7 @@
           </CardHeader>
           <CardContent>
             <div class="space-y-4">
-              <div v-for="item in purchasedItems" :key="item.id"
+              <div v-for="item in purchasedItems" :key="item._id"
                 class="flex items-center gap-4 p-3 rounded-lg bg-gradient-to-r from-[#ffc8dd]/20 to-[#ffafcc]/20">
                 <div class="flex-shrink-0 w-10 h-10 rounded-full bg-[#cdb4db] flex items-center justify-center">
                   <span class="text-white">🪙</span>

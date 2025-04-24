@@ -4,7 +4,7 @@
 
     <CoinsDisplay />
     <BlockedWebsites />
-    <PhoneLock />
+    <!-- <PhoneLock /> -->
     <StudyStats />
   </div>
 </template>
@@ -13,7 +13,7 @@
 import { computed } from 'vue';
 import { useUserStore } from '../stores/userStore';
 import BlockedWebsites from '../components/BlockedWebsites.vue';
-import PhoneLock from '../components/PhoneLock.vue';
+// import PhoneLock from '../components/PhoneLock.vue';
 import StudyStats from '../components/StudyStats.vue';
 import CoinsDisplay from '../components/CoinsDisplay.vue';
 

@@ -82,12 +82,14 @@ export function useAuth() {
                 coins: d.coins,
                 dayStreak: d.day_streak,
                 longestStreak: d.longest_streak,
+                streak_multiplier: d.streak_multiplier, // Added field
                 lastActiveDate: d.last_active_date,
                 challenges: d.challenges,
                 milestones: d.milestones,
                 purchasedItems: d.purchased_items,
                 blockedWebsites: d.blocked_websites,
                 totalFocusTime: d.total_focus_time,
+                todayFocusTime: d.today_focus_time, // Added field
                 weeklyFocusTime: d.weekly_focus_time,
                 monthlyFocusTime: d.monthly_focus_time,
                 studyStats: d.study_stats,
