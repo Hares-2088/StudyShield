@@ -46,10 +46,10 @@ app = FastAPI(
 # Cross-origin resource sharing
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
+    allow_origins=["https://focusbuddy.study", "*"],  # your front-end host
+    allow_credentials=True,                      # or False if you don’t use cookies
     allow_methods=["*"],
-    allow_headers=["*"],
+    allow_headers=["*"],                         # <-- this lets Content-Type through
 )
 
 # Include all routers
