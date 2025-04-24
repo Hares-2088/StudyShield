@@ -26,31 +26,40 @@ async def authenticate_user(email: str, password: str):
         return False
     return user
 
-
 @router.post("/token", response_model=Token)
 async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends()):
     try:
         user = await User.find_one(User.email == form_data.username)
-        if not user or not verify_password(form_data.password, user.password):  # Consistent field name
+        if not user or not verify_password(form_data.password, user.password):
+            # Bad creds → 401
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Incorrect email or password",
                 headers={"WWW-Authenticate": "Bearer"},
             )
 
+        # Good creds → issue token
         access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
         access_token = create_access_token(
             data={"sub": user.email}, expires_delta=access_token_expires
         )
 
-        # Update last login
+        # Update last_login
         user.last_login = datetime.utcnow()
         await user.save()
 
         return {"access_token": access_token, "token_type": "bearer"}
+
+    except HTTPException:
+        # Re-raise 401 or any other HTTPExceptions
+        raise
     except Exception:
+        # Unexpected error → 500
         logger.exception("💥 Error in /auth/token")
-        raise HTTPException(500, "Internal server error")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Internal server error"
+        )
 
 @router.post("/register")
 async def register_user(user_data: dict):  # Changed from UserCreate to dict for flexibility

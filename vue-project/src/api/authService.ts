@@ -71,38 +71,40 @@ export function useAuth() {
 
     const fetchUser = async () => {
         try {
-            const response = await apiClient.get<any>('/users/me');
-            const d = response.data
-
-            // now build a proper camelCase User
-            user.value = {
-                id: d._id,
-                name: d.name,
-                email: d.email,
-                coins: d.coins,
-                dayStreak: d.day_streak,
-                longestStreak: d.longest_streak,
-                streak_multiplier: d.streak_multiplier, // Added field
-                lastActiveDate: d.last_active_date,
-                challenges: d.challenges,
-                milestones: d.milestones,
-                purchasedItems: d.purchased_items,
-                blockedWebsites: d.blocked_websites,
-                totalFocusTime: d.total_focus_time,
-                todayFocusTime: d.today_focus_time, // Added field
-                weeklyFocusTime: d.weekly_focus_time,
-                monthlyFocusTime: d.monthly_focus_time,
-                studyStats: d.study_stats,
-                isPhoneLockEnabled: d.is_phone_lock_enabled ?? false,
-                isActive: d.is_active,
-                role: d.role,
-                lastLogin: d.last_login
-            }
-            console.log('User fetched:', user.value);
+          const response = await apiClient.get<any>('/users/me');
+          const d = response.data;
+    
+          // map snake_case → camelCase AND include every required field
+          const mapped = {
+            id:             d._id,
+            name:           d.name,
+            email:          d.email,
+            coins:          d.coins,
+            dayStreak:      d.day_streak,
+            longestStreak:  d.longest_streak,
+            streak_multiplier: d.streak_multiplier ?? 0,
+            lastActiveDate:    d.last_active_date,
+            challenges:     d.challenges,
+            milestones:     d.milestones,
+            purchasedItems: d.purchased_items,
+            blockedWebsites:d.blocked_websites,
+            totalFocusTime: d.total_focus_time,
+            todayFocusTime: d.today_focus_time ?? 0,
+            weeklyFocusTime:d.weekly_focus_time,
+            monthlyFocusTime:d.monthly_focus_time,
+            studyStats:     d.study_stats,
+            isPhoneLockEnabled: d.is_phone_lock_enabled ?? false,
+            isActive:       d.is_active,
+            role:           d.role,
+            lastLogin:      d.last_login
+          } as User;  // <— tell TS “this exactly matches User”
+    
+          user.value = mapped;
+    
         } catch (error) {
-            console.error('Failed to fetch user:', error);
+          console.error('Failed to fetch user:', error);
         }
-    };
+      };
 
     const refreshToken = async () => {
         try {
