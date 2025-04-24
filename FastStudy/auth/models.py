@@ -1,5 +1,5 @@
 # auth/models.py
-from pydantic import BaseModel
+from pydantic import BaseModel, EmailStr
 from typing import Optional
 
 class Token(BaseModel):
@@ -15,3 +15,7 @@ class UserBase(BaseModel):
 class UserCreate(UserBase):
     password: str  # Plain text password from registration
 
+class RegisterRequest(BaseModel):
+    name: str
+    email: EmailStr
+    password: str

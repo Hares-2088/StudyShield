@@ -5,11 +5,11 @@ from datetime import timedelta, datetime
 
 from models import User
 from .dependencies import get_current_user
-from .models import Token, UserCreate
+from .models import Token, UserCreate, RegisterRequest
 from .utils import (
     verify_password,
     create_access_token,
-    ACCESS_TOKEN_EXPIRE_MINUTES
+    ACCESS_TOKEN_EXPIRE_MINUTES, get_password_hash
 )
 
 router = APIRouter(prefix="/auth", tags=["Auth"])
@@ -61,15 +61,21 @@ async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(
             detail="Internal server error"
         )
 
-@router.post("/register")
-async def register_user(user_data: dict):  # Changed from UserCreate to dict for flexibility
-    existing_user = await User.find_one(User.email == user_data['email'])
-    if existing_user:
+@router.post("/register", response_model=Token, status_code=status.HTTP_201_CREATED)
+async def register_user(req: RegisterRequest):
+    # 1) Check for existing
+    if await User.find_one(User.email == req.email):
         raise HTTPException(status_code=400, detail="Email already registered")
 
-    # Use our create_user method which handles hashing
-    await User.create_user(user_data)
-    return {"message": "User created successfully"}
+    # 2) Hash & insert
+    user_dict = req.dict()
+    user_dict["password"] = get_password_hash(user_dict["password"])
+    new_user = await User(**user_dict).create()
+
+    # 3) Issue JWT
+    expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    token = create_access_token({"sub": new_user.email}, expires_delta=expires)
+    return {"access_token": token, "token_type": "bearer"}
 
 @router.post("/refresh")
 async def refresh_token(current_user: User = Depends(get_current_user)):
