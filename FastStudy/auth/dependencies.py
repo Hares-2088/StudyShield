@@ -4,8 +4,6 @@ from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
 from models.User import User
 from .utils import SECRET_KEY, ALGORITHM
-from typing import Optional
-from beanie import PydanticObjectId
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/token")
 

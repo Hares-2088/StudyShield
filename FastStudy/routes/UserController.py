@@ -7,7 +7,7 @@ from models.ShopItem import ShopItem
 from typing import List, Optional
 from datetime import datetime, timedelta
 from pydantic import BaseModel
-from bson import ObjectId
+from beanie import PydanticObjectId
 import math
 from datetime import time
 
@@ -40,7 +40,7 @@ class UserOut(BaseModel):
 
 # Helper functions
 async def get_user_or_404(user_id: str) -> User:
-    user = await User.get(ObjectId(user_id))
+    user = await User.get(PydanticObjectId(user_id))
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     return user
@@ -197,7 +197,7 @@ async def update_challenge_progress(
         raise HTTPException(status_code=403, detail="Can only update your own challenges")
 
     user = await get_user_or_404(user_id)
-    challenge = await Challenge.get(ObjectId(challenge_id))
+    challenge = await Challenge.get(PydanticObjectId(challenge_id))
 
     if not challenge:
         raise HTTPException(status_code=404, detail="Challenge not found")
@@ -254,7 +254,7 @@ async def claim_milestone_tier(
         raise HTTPException(status_code=403, detail="Can only claim your own milestones")
 
     user = await get_user_or_404(user_id)
-    milestone = await Milestone.get(ObjectId(milestone_id))
+    milestone = await Milestone.get(PydanticObjectId(milestone_id))
 
     if not milestone:
         raise HTTPException(status_code=404, detail="Milestone not found")
@@ -309,7 +309,7 @@ async def purchase_item(
         raise HTTPException(status_code=403, detail="Can only purchase for yourself")
 
     user = await get_user_or_404(user_id)
-    item = await ShopItem.get(ObjectId(item_id))
+    item = await ShopItem.get(PydanticObjectId(item_id))
 
     if not item:
         raise HTTPException(status_code=404, detail="Item not found")

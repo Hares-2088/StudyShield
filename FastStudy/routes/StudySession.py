@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel
 from typing import List, Optional
 from datetime import datetime
-from bson import ObjectId
+from beanie import PydanticObjectId
 
 from models.StudySession import StudySession, Task
 from models.User import User, StudyStat
@@ -53,7 +53,7 @@ async def complete_study_session(
     req: CompleteSessionRequest,
     current_user: User = Depends(get_current_user)
 ):
-    session = await StudySession.get(ObjectId(session_id))
+    session = await StudySession.get(PydanticObjectId(session_id))
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
 

@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, Depends
 from models.ShopItem import ShopItem
 from typing import List, Optional
-from bson import ObjectId
+from beanie import PydanticObjectId
 from auth.dependencies import get_current_user
 from models.User import User
 
@@ -25,7 +25,7 @@ async def get_shop_items(
 # Single item - public
 @router.get("/items/{item_id}", response_model=ShopItem)
 async def get_shop_item(item_id: str):
-    item = await ShopItem.get(ObjectId(item_id))
+    item = await ShopItem.get(PydanticObjectId(item_id))
     if not item:
         raise HTTPException(status_code=404, detail="Item not found")
     return item

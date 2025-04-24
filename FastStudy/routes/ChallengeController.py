@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, Depends
 from models.Challenge import Challenge, ChallengeType
 from typing import List, Optional
-from bson import ObjectId
+from beanie import PydanticObjectId
 from auth.dependencies import get_current_user
 from models.User import User
 
@@ -38,7 +38,7 @@ async def get_milestone_challenges():
 
 @router.get("/{challenge_id}", response_model=Challenge)
 async def get_challenge(challenge_id: str):
-    challenge = await Challenge.get(ObjectId(challenge_id))
+    challenge = await Challenge.get(PydanticObjectId(challenge_id))
     if not challenge:
         raise HTTPException(status_code=404, detail="Challenge not found")
     return challenge

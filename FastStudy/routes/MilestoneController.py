@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, Depends
 from models.Milestone import Milestone, TierName
 from typing import List
-from bson import ObjectId
+from beanie import PydanticObjectId
 from auth.dependencies import get_current_user
 from models.User import User
 
@@ -17,7 +17,7 @@ async def get_milestones():
 # Get single milestone - public
 @router.get("/{milestone_id}", response_model=Milestone)
 async def get_milestone(milestone_id: str):
-    milestone = await Milestone.get(ObjectId(milestone_id))
+    milestone = await Milestone.get(PydanticObjectId(milestone_id))
     if not milestone:
         raise HTTPException(status_code=404, detail="Milestone not found")
     return milestone
