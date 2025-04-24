@@ -17,9 +17,9 @@ export interface MilestoneProgress {
 
 export interface StudyStat {
     date: string; // ISO string
-    focusTime: number; // in minutes
+    focus_time: number; // in minutes
     sessions: number;
-    distractionsBlocked: number;
+    distractions_blocked: number;
 }
 
 export interface User {
@@ -29,12 +29,14 @@ export interface User {
     coins: number;
     dayStreak: number;
     longestStreak: number;
+    streak_multiplier: number;
     lastActiveDate?: string; // ISO string
     challenges: ChallengeProgress[];
     milestones: MilestoneProgress[];
     purchasedItems: ShopItem[];
     blockedWebsites: string[];          // matches the API field
     totalFocusTime: number; // in minutes
+    todayFocusTime: number; // in minutes
     weeklyFocusTime: number;
     monthlyFocusTime: number;
     studyStats: StudyStat[];

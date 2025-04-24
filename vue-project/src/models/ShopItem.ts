@@ -1,5 +1,5 @@
 export interface ShopItem {
-    _id: string;
+    id: string;
     title: string;
     description?: string;
     price: number;

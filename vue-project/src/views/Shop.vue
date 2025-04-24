@@ -77,9 +77,9 @@ onMounted(async () => {
     try {
         const items = await shopApi.getShopItems();
         shopItems.value = items.map(i => ({
-            id: i._id,                     
+            id: i._id,
             title: i.title,
-            description: i.description,
+            description: i.description, // Ensure description is included
             price: i.price,
             image: i.image_url, // Ensure this maps correctly to the image property
             category: i.category,

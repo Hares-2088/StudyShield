@@ -35,11 +35,11 @@
             <Card>
                 <CardHeader class="flex flex-row items-center justify-between pb-2">
                     <CardTitle class="text-sm font-medium text-muted-foreground">Today's Focus Time</CardTitle>
-                    <Badge variant="outline" class="bg-pink-50 text-pink-700">{{ Math.floor(focusTime / 60) }}h {{
-                        focusTime % 60 }}m</Badge>
+                    <Badge variant="outline" class="bg-pink-50 text-pink-700">{{ Math.floor(todayFocusTime / 60) }}h {{
+                        todayFocusTime % 60 }}m</Badge>
                 </CardHeader>
                 <CardContent>
-                    <Progress class="mt-2" :value="(focusTime / (8 * 60)) * 100" :class="{ 'bg-pink-300': true }" />
+                    <Progress class="mt-2" :value="(todayFocusTime / (8 * 60)) * 100" :class="{ 'bg-pink-300': true }" />
                 </CardContent>
             </Card>
         </div>
@@ -100,7 +100,7 @@ import Progress from './ui/progress/Progress.vue';
 import Badge from './ui/badge/Badge.vue';
 
 const userStore = useUserStore();
-const focusTime = computed(() => userStore.focusTime);
+const todayFocusTime = computed(() => userStore.todayFocusTime || 0);
 const dayStreak = computed(() => userStore.dayStreak || 0);
 const weeklyHours = computed(() => userStore.weeklyStudyHours || 0);
 

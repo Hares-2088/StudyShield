@@ -7,8 +7,6 @@ import type { User, ChallengeProgress, MilestoneProgress, StudyStat } from '../m
 import type { ShopItem } from '../models/ShopItem';
 import type { StudySession } from '../models/StudySession';
 
-const backendUrl = import.meta.env.VITE_FAST_API_URI;
-
 export const useUserStore = defineStore('user', () => {
   const router = useRouter();
   const user = ref<User | null>(null);
@@ -20,7 +18,9 @@ export const useUserStore = defineStore('user', () => {
   const isPhoneLockEnabled = ref(false);
   const focusTime = ref(0);
   const dayStreak = ref(0);
+  const streak_multiplier = ref(0);
   const weeklyStudyHours = ref(0);
+  const todayFocusTime = ref(0);
   const monthlyStudyHours = ref(0);
   const coins = ref(0);
   const studySessions = ref<StudySession[]>([]);
@@ -29,9 +29,38 @@ export const useUserStore = defineStore('user', () => {
 
   const fetchUserData = async () => {
     try {
-      const response = await apiClient.get<any>(`/users/me`)
-      const d = response.data
+      const { data: d } = await apiClient.get<any>('/users/me');
 
+      // 1) Turn your two DBRefs into actual ShopItem objects, safely:
+      let detailedPurchasedItems: ShopItem[] = [];
+
+      if (Array.isArray(d.purchased_items)) {
+        // Try to fetch each one, but don’t let one 404/CORS drop kill the rest:
+        const fetches = d.purchased_items.map(async (ref: any) => {
+          // if it's already a full object, it'll have a .id and .title
+          if (ref.id && ref.title) {
+            return ref as ShopItem;
+          }
+          // otherwise assume it's a DBRef
+          const itemId = ref.$id?.$oid ?? ref.$id;
+          if (!itemId) return null;
+          try {
+            const res = await apiClient.get<ShopItem>(`/shop/items/${itemId}`);
+            return res.data;
+          } catch (err) {
+            console.warn(`Couldn’t fetch ShopItem ${itemId}`, err);
+            return null;
+          }
+        });
+        const settled = await Promise.allSettled(fetches);
+        detailedPurchasedItems = settled
+          .filter((r): r is PromiseFulfilledResult<ShopItem> =>
+            r.status === 'fulfilled' && !!r.value
+          )
+          .map(r => r.value!);
+      }
+
+      // 2) Build your User object exactly once
       user.value = {
         id: d._id,
         name: d.name,
@@ -39,12 +68,14 @@ export const useUserStore = defineStore('user', () => {
         coins: d.coins,
         dayStreak: d.day_streak,
         longestStreak: d.longest_streak,
+        streak_multiplier: d.streak_multiplier,
         lastActiveDate: d.last_active_date,
         challenges: d.challenges,
         milestones: d.milestones,
-        purchasedItems: d.purchased_items,
+        purchasedItems: detailedPurchasedItems, // Correctly assign processed items
         blockedWebsites: d.blocked_websites,
         totalFocusTime: d.total_focus_time,
+        todayFocusTime: d.today_focus_time,
         weeklyFocusTime: d.weekly_focus_time,
         monthlyFocusTime: d.monthly_focus_time,
         studyStats: d.study_stats,
@@ -52,25 +83,26 @@ export const useUserStore = defineStore('user', () => {
         isActive: d.is_active,
         role: d.role,
         lastLogin: d.last_login
-      }
+      };
 
-      // now populate your other refs off that same `user.value`
-      blockedSites.value = user.value.blockedWebsites
-      challenges.value = user.value.challenges
-      milestones.value = user.value.milestones
-      purchasedItems.value = user.value.purchasedItems
-      studyStats.value = user.value.studyStats
-      focusTime.value = user.value.totalFocusTime
-      dayStreak.value = user.value.dayStreak
-      weeklyStudyHours.value = user.value.weeklyFocusTime
-      monthlyStudyHours.value = user.value.monthlyFocusTime
-      coins.value = user.value.coins
-      isPhoneLockEnabled.value = user.value.isPhoneLockEnabled
+      // 3) Push out into your store refs
+      blockedSites.value = user.value.blockedWebsites;
+      challenges.value = user.value.challenges;
+      milestones.value = user.value.milestones;
+      purchasedItems.value = detailedPurchasedItems; // Ensure this is correctly assigned
+      studyStats.value = user.value.studyStats;
+      focusTime.value = user.value.totalFocusTime;
+      todayFocusTime.value = user.value.todayFocusTime;
+      dayStreak.value = user.value.dayStreak;
+      streak_multiplier.value = user.value.streak_multiplier;
+      weeklyStudyHours.value = user.value.weeklyFocusTime;
+      monthlyStudyHours.value = user.value.monthlyFocusTime;
+      coins.value = user.value.coins;
 
     } catch (error) {
-      console.error('Error fetching user data:', error)
+      console.error('Error fetching user data:', error);
     }
-  }
+  };
 
   const initializeStore = async () => {
     if (localStorage.getItem('access_token')) {
@@ -106,7 +138,7 @@ export const useUserStore = defineStore('user', () => {
   const updateStudySession = async (sessionId: string, updates: Partial<StudySession>) => {
     try {
       const response = await apiClient.patch(`/users/${user.value?.id}/study-sessions/${sessionId}`, updates);
-      const index = studySessions.value.findIndex((s) => s.id === sessionId);
+      const index = studySessions.value.findIndex((s) => s._id === sessionId);
       if (index !== -1) {
         studySessions.value[index] = response.data;
       }
@@ -196,11 +228,13 @@ export const useUserStore = defineStore('user', () => {
     blockedSites.value = [];
     challenges.value = [];
     milestones.value = [];
+    streak_multiplier.value = 0;
     purchasedItems.value = [];
     studyStats.value = [];
     isPhoneLockEnabled.value = false;
     focusTime.value = 0;
     dayStreak.value = 0;
+    todayFocusTime.value = 0;
     weeklyStudyHours.value = 0;
     monthlyStudyHours.value = 0;
     coins.value = 0;
@@ -212,6 +246,7 @@ export const useUserStore = defineStore('user', () => {
   return {
     user,
     blockedSites,
+    streak_multiplier,
     challenges,
     milestones,
     purchasedItems,
@@ -220,6 +255,7 @@ export const useUserStore = defineStore('user', () => {
     focusTime,
     dayStreak,
     weeklyStudyHours,
+    todayFocusTime,
     monthlyStudyHours,
     coins,
     studySessions,

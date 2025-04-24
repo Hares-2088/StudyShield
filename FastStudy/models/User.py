@@ -37,6 +37,7 @@ class User(Document):
     coins: int = 0
     day_streak: int = 0
     longest_streak: int = 0
+    streak_multiplier: float = 1
     last_active_date: Optional[datetime] = None
     challenges: List[ChallengeProgress] = []
     milestones: List[MilestoneProgress] = []
@@ -44,6 +45,7 @@ class User(Document):
     blocked_websites: List[str] = []
     total_focus_time: int = 0  # in minutes
     weekly_focus_time: int = 0
+    today_focus_time: int = 0
     monthly_focus_time: int = 0
     study_stats: List[StudyStat] = []
     is_active: bool = True

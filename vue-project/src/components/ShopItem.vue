@@ -6,6 +6,7 @@
         </div>
         <div class="p-4">
             <h3 class="text-lg font-semibold text-pink-700">{{ item.title }}</h3>
+            <p class="text-sm text-[#6c757d] mt-2">{{ item.description }}</p> <!-- Display description -->
             <div class="flex justify-between items-center mt-3">
                 <div class="flex items-center">
                     <span class="text-xl mr-1">🪙</span>

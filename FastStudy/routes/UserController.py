@@ -4,14 +4,39 @@ from models.User import User, ChallengeProgress, MilestoneProgress, StudyStat, U
 from models.Challenge import Challenge, ChallengeType
 from models.Milestone import Milestone
 from models.ShopItem import ShopItem
-from typing import List
+from typing import List, Optional
 from datetime import datetime, timedelta
 from pydantic import BaseModel
 from bson import ObjectId
 import math
+from datetime import time
 
 router = APIRouter(prefix="/users", tags=["Users"])
 
+from models.ShopItem import ShopItem
+
+class UserOut(BaseModel):
+    id: str
+    name: str
+    email: str
+    coins: int
+    day_streak: int
+    longest_streak: int
+    streak_multiplier: float
+    last_active_date: Optional[datetime]
+    # … all the other fields you want …
+    purchased_items: List[ShopItem]       # <-- full ShopItem here
+    blocked_websites: List[str]
+    total_focus_time: int
+    weekly_focus_time: int
+    monthly_focus_time: int
+    today_focus_time: int
+    # etc…
+
+    class Config:
+        # use the same field names as the DB so our dict unpacking works
+        allow_population_by_field_name = True
+        orm_mode = True
 
 # Helper functions
 async def get_user_or_404(user_id: str) -> User:
@@ -34,36 +59,71 @@ class UpdateFocusTimeRequest(BaseModel):
     minutes: int
 
 
-# User profile endpoints
-@router.get("/me", response_model=User)
+@router.get("/me", response_model=UserOut)
 async def read_current_user(current_user: User = Depends(get_current_user)):
-    now = datetime.utcnow()
+    now   = datetime.utcnow()
+    today = now.date()
 
-    # 1) update last_active_date
+    # build the set of all calendar‐days on which the user has studied
+    studied_days = { stat.date.date() for stat in current_user.study_stats }
+
+    # if the user has never studied, zero everything out
+    if not studied_days:
+        current_user.day_streak         = 0
+        # longest_streak remains whatever they had
+        current_user.streak_multiplier  = 1.0
+        current_user.today_focus_time   = 0
+    else:
+        # walk backwards from today to compute day_streak
+        streak = 0
+        cursor = today
+        while cursor in studied_days:
+            streak  += 1
+            cursor  -= timedelta(days=1)
+
+        current_user.day_streak       = streak
+        current_user.longest_streak   = max(current_user.longest_streak, streak)
+
+        # recalc streak multiplier
+        if   streak >= 30: current_user.streak_multiplier = 3.0
+        elif streak >= 14: current_user.streak_multiplier = 2.0
+        elif streak >=  7: current_user.streak_multiplier = 1.5
+        else:              current_user.streak_multiplier = 1.0
+
+        # sum up today's focus_time if any
+        current_user.today_focus_time = sum(
+            s.focus_time for s in current_user.study_stats
+            if s.date.date() == today
+        )
+
+    # stamp “last seen”
     current_user.last_active_date = now
 
-    # 2) recalc weekly and monthly from study_stats
+    # rolling focus totals
     week_ago  = now - timedelta(days=7)
     month_ago = now - timedelta(days=30)
-
-    # sum up focus_time in those windows
-    weekly = sum(
-        stat.focus_time
-        for stat in current_user.study_stats
-        if stat.date >= week_ago
+    current_user.weekly_focus_time  = sum(
+        s.focus_time for s in current_user.study_stats
+        if s.date >= week_ago
     )
-    monthly = sum(
-        stat.focus_time
-        for stat in current_user.study_stats
-        if stat.date >= month_ago
+    current_user.monthly_focus_time = sum(
+        s.focus_time for s in current_user.study_stats
+        if s.date >= month_ago
     )
 
-    current_user.weekly_focus_time  = weekly
-    current_user.monthly_focus_time = monthly
-
-    # 3) save and return
+    # persist + load links for the front end
     await current_user.save()
-    return current_user 
+    await current_user.fetch_link("purchased_items")
+
+    # build the dict that Pydantic will serialise
+    user_dict = current_user.dict(by_alias=True)
+    # overwrite purchased_items with the *actual* documents
+    user_dict["purchased_items"] = [
+        item.dict(by_alias=True)
+        for item in current_user.purchased_items
+    ]
+
+    return user_dict
 
 @router.get("/", response_model=List[User])
 async def get_users(current_user: User = Depends(get_current_user)):

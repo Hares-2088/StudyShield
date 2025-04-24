@@ -96,7 +96,7 @@ const startSession = async () => {
   }
 };
 
-// Finish session: stop timer, call backend complete, redirect or reset
+// Finish session: stop timer, call backend complete, redirect
 const finishSession = async () => {
   if (!activeSession.value) return;
   clearInterval(timerHandle);
@@ -108,8 +108,8 @@ const finishSession = async () => {
       actual,
       distractions
     );
-    // navigate to history or reset
-    router.push('/study-sessions');
+    // navigate to a new session
+    router.push('/start-session');
   } catch (err) {
     console.error('Error finishing session:', err);
   }
