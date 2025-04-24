@@ -3,40 +3,45 @@ from auth.dependencies import get_current_user
 from models.User import User, ChallengeProgress, MilestoneProgress, StudyStat, UserRole
 from models.Challenge import Challenge, ChallengeType
 from models.Milestone import Milestone
-from models.ShopItem import ShopItem
 from typing import List, Optional
 from datetime import datetime, timedelta
 from pydantic import BaseModel
 from beanie import PydanticObjectId
 import math
-from datetime import time
+from pydantic import EmailStr
+from beanie import Link
 
 router = APIRouter(prefix="/users", tags=["Users"])
 
 from models.ShopItem import ShopItem
 
 class UserOut(BaseModel):
-    id: str
+    _id: str
     name: str
-    email: str
-    coins: int
-    day_streak: int
-    longest_streak: int
-    streak_multiplier: float
-    last_active_date: Optional[datetime]
-    # … all the other fields you want …
-    purchased_items: List[ShopItem]       # <-- full ShopItem here
-    blocked_websites: List[str]
-    total_focus_time: int
-    weekly_focus_time: int
-    monthly_focus_time: int
-    today_focus_time: int
-    # etc…
+    email: EmailStr
+    password: str  # This stores the hashed password despite the name
+    coins: int = 0
+    day_streak: int = 0
+    longest_streak: int = 0
+    streak_multiplier: float = 1
+    last_active_date: Optional[datetime] = None
+    challenges: List[ChallengeProgress] = []
+    milestones: List[MilestoneProgress] = []
+    purchased_items: List[Link[ShopItem]] = []
+    blocked_websites: List[str] = []
+    total_focus_time: int = 0  # in minutes
+    weekly_focus_time: int = 0
+    today_focus_time: int = 0
+    monthly_focus_time: int = 0
+    study_stats: List[StudyStat] = []
+    is_active: bool = True
+    role: UserRole = UserRole.USER
+    last_login: Optional[datetime] = None
 
     class Config:
-        # use the same field names as the DB so our dict unpacking works
-        allow_population_by_field_name = True
-        orm_mode = True
+        #Pydantic v2 style:
+        validate_by_name = True  # was allow_population_by_field_name
+        from_attributes = True  # was orm_mode
 
 # Helper functions
 async def get_user_or_404(user_id: str) -> User:
@@ -209,7 +214,7 @@ async def update_challenge_progress(
 
     if not challenge_progress:
         challenge_progress = ChallengeProgress(
-            challenge_id=ObjectId(challenge_id),
+            challenge_id=PydanticObjectId(challenge_id),
             progress=progress,
             is_completed=progress >= challenge.goal
         )
