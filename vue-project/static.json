@@ -1,7 +1,8 @@
 {
     "root": "dist",
     "routes": {
-      "/**": "index.html"
-    }
+      "/**": "/index.html"
+    },
+    "error_page": "/index.html"
   }
   
