@@ -33,7 +33,7 @@
             <ShopItem v-for="item in shopItems" :key="item.id" :item="item" :coins="coins" @purchase="purchaseItem"
                 class="transition-all hover:scale-[1.02] hover:shadow-xl" />
             <div @click="showNewItemModal = true"
-                class="flex justify-center items-center bg-white/20 backdrop-blur-sm rounded-lg shadow-md cursor-pointer hover:shadow-lg transition-all">
+                class="flex justify-center items-center bg-white/20 backdrop-blur-sm rounded-lg shadow-md cursor-pointer hover:shadow-lg transition-all p-4 pb-6">
                 <span class="text-4xl text-[#A2D2FF]">+</span>
             </div>
         </div>
