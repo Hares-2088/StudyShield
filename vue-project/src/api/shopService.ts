@@ -2,16 +2,8 @@ import apiClient from './apiClient';
 import type { ShopItem } from '@/models/ShopItem';
 
 export default {
-    async getShopItems(
-        category?: string,
-        is_featured?: boolean
-    ): Promise<ShopItem[]> {
-        const response = await apiClient.get('/shop/items', {
-            params: {
-                category,
-                is_featured: is_featured,
-            },
-        });
+    async getShopItems(): Promise<ShopItem[]> {
+        const response = await apiClient.get('/shop/items');
         return response.data;
     },
 

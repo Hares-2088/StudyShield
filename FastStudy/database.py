@@ -1,12 +1,5 @@
-from typing import List, Type
-
 import motor.motor_asyncio
 from beanie import init_beanie, Document
-from models.Challenge import Challenge
-from models.ShopItem import ShopItem
-from models.User import User
-from models.Milestone import Milestone
-from models.StudySession import StudySession
 from config import Config
 import logging
 from pymongo.errors import ConnectionFailure, PyMongoError

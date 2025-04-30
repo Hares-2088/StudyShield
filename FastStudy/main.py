@@ -1,4 +1,15 @@
-# Import models explicitly to avoid conflicts
+print("🐍  main.py HIT")
+
+import datetime
+from _pydatetime import timedelta
+
+from fastapi import FastAPI, Request
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+import logging
+import sys
+
+# your existing imports…
 from auth.utils import get_password_hash
 from config import Config
 from database import init_db
@@ -6,53 +17,72 @@ from models.User import User, StudyStat
 from models.Challenge import Challenge, ChallengeType, TierName
 from models.ShopItem import ShopItem
 from models.Milestone import Milestone
-from models.StudySession import StudySession, Task  # Make sure this exists
+from models.StudySession import StudySession, Task
 
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
-from datetime import datetime, timedelta
-import bcrypt
+# ─── configure root logger ─────────────────────────────────────────
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s | %(name)s | %(levelname)s | %(message)s",
+    handlers=[
+        logging.StreamHandler(sys.stdout),
+        logging.FileHandler("app.log", encoding="utf-8"),
+    ],
+)
+logger = logging.getLogger("studyshield")
 
-# Import routers with clearer names
+app = FastAPI(
+    title="Study Shield API",
+    version="1.0.0",
+    docs_url="/api/docs",
+    redoc_url="/api/redoc",
+)
+
+@app.get("/___debug")
+async def __debug():
+    print("🐞  __debug HIT")
+    return {"debug": True}
+
+
+# ─── CORS ───────────────────────────────────────────────────────────
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+    allow_credentials=False,
+)
+
+
+# ─── 1) REQUEST/RESPONSE LOGGING ──────────────────────────────────
+from fastapi import Request
+
+@app.middleware("http")
+async def log_requests(request: Request, call_next):
+    print(f"→ {request.method} {request.url}")      # <-- simple print so you definitely see it
+    response = await call_next(request)
+    print(f"← {response.status_code} {request.url}")  # <-- and print response code
+    return response
+
+# ─── 2) GLOBAL EXCEPTION HANDLER ─────────────────────────────────
+from fastapi.responses import JSONResponse
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    print(f"💥 Exception on {request.method} {request.url}: {exc!r}")
+    return JSONResponse(
+        status_code=500,
+        content={"detail": "Internal server error", "error": str(exc)},
+    )
+
+
+# ─── now include your routers ───────────────────────────────────────
 from routes.UserController import router as user_router
 from routes.ChallengeController import router as challenge_router
 from routes.ItemController import router as item_router
 from routes.MilestoneController import router as milestone_router
-from routes.StudySession import router as study_session_router  # Renamed for clarity
+from routes.StudySession import router as study_session_router
 from auth.routes import router as auth_router
 
-import logging
-import sys
-
-# Update your logging configuration
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.StreamHandler(sys.stdout),  # Use stdout with proper encoding
-        logging.FileHandler('app.log', encoding='utf-8')
-    ]
-)
-logger = logging.getLogger(__name__)
-
-app = FastAPI(
-    title="Study Shield API",
-    description="API for Study Shield productivity application",
-    version="1.0.0",
-    docs_url="/api/docs",
-    redoc_url="/api/redoc"
-)
-
-# Cross-origin resource sharing
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["https://focusbuddy.study", "*"],  # your front-end host
-    allow_credentials=True,                      # or False if you don’t use cookies
-    allow_methods=["*"],
-    allow_headers=["*"],                         # <-- this lets Content-Type through
-)
-
-# Include all routers
 app.include_router(user_router)
 app.include_router(challenge_router)
 app.include_router(item_router)
@@ -114,15 +144,13 @@ async def seed_initial_data():
                     title="Digital Productivity Planner",
                     description="Advanced digital planner for optimal productivity",
                     price=45,
-                    image_url="https://images.unsplash.com/photo-1506784983877-45594efa4cbe",
-                    category="tools"
+                    image_url="https://images.unsplash.com/photo-1506784983877-45594efa4cbe"
                 ),
                 ShopItem(
                     title="Study Achievement Badges",
                     description="Unlock exclusive profile badges",
                     price=25,
-                    image_url="https://images.unsplash.com/photo-1533928298208-27ff66555d8d",
-                    category="cosmetic"
+                    image_url="https://images.unsplash.com/photo-1533928298208-27ff66555d8d"
                 )
             ]
             await ShopItem.insert_many(shop_items)
@@ -144,7 +172,7 @@ async def seed_initial_data():
                 monthly_focus_time=890,
                 study_stats=[
                     StudyStat(
-                        date=datetime.utcnow() - timedelta(days=i),
+                        date= datetime.utcnow() - timedelta(days=i),
                         focus_time=60 + (i * 10),
                         sessions=2 + i,
                         distractions_blocked=3 + i
