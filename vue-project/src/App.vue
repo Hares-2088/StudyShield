@@ -97,7 +97,7 @@ onMounted(async () => {
       <footer class="bg-pink-600/90 text-white py-3 md:py-4 mt-6 md:mt-8 w-full">
         <div class="w-full px-4 md:px-6 text-center max-w-7xl mx-auto">
           <p class="text-sm drop-shadow-md">
-            Made with ❤️ by <span class="font-semibold">Your Name</span>
+            Made with ❤️ by <span class="font-semibold">Ademichou</span>
           </p>
         </div>
       </footer>
