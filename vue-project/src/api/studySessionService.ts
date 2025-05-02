@@ -11,6 +11,11 @@ export default {
     return response.data;
   },
 
+  async getStudySession(sessionId: string): Promise<StudySession> {
+    const response = await apiClient.get(`/study-sessions/${sessionId}`);
+    return response.data;
+  },
+
   async createStudySession(
     userId: string,
     tasks: Task[],

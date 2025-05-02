@@ -1,6 +1,8 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import type { RouteRecordRaw } from 'vue-router';
 import { useAuth } from '@/api/authService';
+import StudySession from '@/views/StudySession.vue';
+import ActiveStudySession from '@/views/ActiveStudySession.vue';
 
 const routes: Array<RouteRecordRaw> = [
   { path: '/', redirect: '/login' },
@@ -37,7 +39,13 @@ const routes: Array<RouteRecordRaw> = [
   {
     path: '/start-session',
     name: 'StartSession',
-    component: () => import('@/views/StudySession.vue'),
+    component: StudySession,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/active-session/:sessionId',
+    name: 'ActiveStudySession',
+    component: ActiveStudySession,
     meta: { requiresAuth: true }
   },
   {

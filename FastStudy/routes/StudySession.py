@@ -30,6 +30,22 @@ async def get_study_sessions(current_user: User = Depends(get_current_user)):
     ).sort(-StudySession.start_time).to_list()
 
 
+@router.get("/{session_id}", response_model=StudySession)
+async def get_study_session(
+    session_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    session = await StudySession.get(PydanticObjectId(session_id))
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found")
+
+    # Verify ownership
+    if str(session.user.id) != str(current_user.id):
+        raise HTTPException(status_code=403, detail="Not authorized")
+
+    return session
+
+
 # Create study session
 @router.post("/", response_model=StudySession, status_code=201)
 async def create_study_session(
