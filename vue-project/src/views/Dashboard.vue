@@ -3,7 +3,7 @@
     <h1 class="text-xl md:text-2xl font-bold text-pink-700 mb-4 md:mb-6">Hello, {{ user?.name }}! 🌸</h1>
 
     <CoinsDisplay />
-    <BlockedWebsites />
+    <!-- <BlockedWebsites /> -->
     <!-- <PhoneLock /> -->
     <StudyStats />
   </div>

@@ -32,11 +32,10 @@
                             </span>
                             <span class="font-medium capitalize text-gray-900">{{ tier.name }}</span>
                         </div>
-
-                        <div class="flex items-center">
-                            <span class="text-lg mr-1">🪙</span>
-                            <span class="font-semibold text-gray-900">{{ tier.coins }}</span>
-                        </div>
+                        <p class="text-sm text-gray-600">Requirement: {{ tier.value }} {{ getProgressUnit() }}</p>
+                        <div class="flex items-center"></div>
+                        <span class="text-lg mr-1">🪙</span>
+                        <span class="font-semibold text-gray-900">{{ tier.coins }}</span>
                     </div>
 
                     <div class="mt-2 text-sm text-gray-700">
@@ -46,6 +45,11 @@
                     <button v-if="canClaimTier(tier)" @click="claimReward(tier)"
                         class="mt-2 w-full py-1.5 bg-pink-500 text-white text-sm rounded-lg hover:bg-pink-600 transition-colors">
                         Claim Reward
+                    </button>
+
+                    <button v-if="canRedeemTier(tier)" @click="redeemTier(tier)"
+                        class="mt-2 w-full py-1.5 bg-green-500 text-white text-sm rounded-lg hover:bg-green-600 transition-colors">
+                        Redeem
                     </button>
 
                     <p v-else-if="tier.claimed" class="mt-2 text-sm text-green-700 font-medium">
@@ -120,6 +124,19 @@ const canClaimTier = (tier: any) => {
         getTierValue(props.milestone.current_tier) >= getTierValue(tier.name);
 };
 
+// Check if a tier can be redeemed
+const canRedeemTier = (tier: any) => {
+    const propertyToCheck = Object.keys(tier).find(key =>
+        ['hours', 'streak', 'blocks'].includes(key)
+    );
+
+    if (!propertyToCheck) return false;
+
+    return props.milestone.progress >= tier[propertyToCheck] &&
+        !tier.claimed &&
+        !props.milestone.claimed_tiers.includes(tier.name);
+};
+
 // Get numeric value of tier for comparison
 const getTierValue = (tierName: string) => {
     switch (tierName) {
@@ -134,6 +151,11 @@ const getTierValue = (tierName: string) => {
 
 // Claim reward for a tier
 const claimReward = (tier: any) => {
+    emit('claim', props.milestone.id, tier.name);
+};
+
+// Emit redeem event for a tier
+const redeemTier = (tier: any) => {
     emit('claim', props.milestone.id, tier.name);
 };
 </script>

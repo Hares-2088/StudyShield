@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, Depends
 from auth.dependencies import get_current_user
 from models.User import User, ChallengeProgress, MilestoneProgress, StudyStat, UserRole
-from models.Challenge import Challenge, ChallengeType
+from models.Challenge import Challenge, ChallengeType, TierName
 from models.Milestone import Milestone
 from typing import List, Optional
 from datetime import datetime, timedelta
@@ -434,3 +434,83 @@ async def remove_blocked_website(
     user.blocked_websites.remove(website)
     await user.save()
     return {"message": "Website unblocked successfully"}
+
+
+@router.post("/{user_id}/challenges/{challenge_id}/redeem")
+async def redeem_challenge(
+    user_id: str,
+    challenge_id: str,
+    current_user: User = Depends(get_current_user),
+):
+    if str(current_user.id) != user_id:
+        raise HTTPException(403, "Can only redeem your own challenges")
+
+    # find the ChallengeProgress entry
+    cp = next(
+        (c for c in current_user.challenges if str(c.challenge_id.id) == challenge_id),
+        None
+    )
+    if not cp:
+        raise HTTPException(404, "No progress found for that challenge")
+    if not cp.is_completed:
+        raise HTTPException(400, "Challenge not yet completed")
+    if cp.redeemed:
+        raise HTTPException(400, "Already redeemed")
+
+    # credit coins
+    chal = await Challenge.get(PydanticObjectId(challenge_id))
+    current_user.coins += chal.coins
+
+    # mark redeemed
+    cp.redeemed = True
+    cp.redeemed_at = datetime.utcnow()
+
+    await current_user.save()
+    return {"message":"Challenge redeemed","new_balance":current_user.coins}
+
+
+@router.post("/{user_id}/milestones/{milestone_id}/redeem/{tier_name}")
+async def redeem_milestone_tier(
+    user_id: str,
+    milestone_id: str,
+    tier_name: TierName,
+    current_user: User = Depends(get_current_user),
+):
+    if str(current_user.id) != user_id:
+        raise HTTPException(403, "Can only redeem your own milestones")
+
+    mp = next(
+        (m for m in current_user.milestones if str(m.milestone_id.id) == milestone_id),
+        None
+    )
+    if not mp:
+        raise HTTPException(404, "Milestone not started")
+
+    # static config
+    milestone = await Milestone.get(PydanticObjectId(milestone_id))
+    tier_req = milestone.tiers[tier_name]
+    if mp.progress < tier_req.value:
+        raise HTTPException(400, "Requirements not met")
+    if tier_name in mp.claimed_tiers:
+        raise HTTPException(400, "Tier already claimed")
+
+    # credit coins and mark claimed
+    current_user.coins += tier_req.coins
+    mp.claimed_tiers.append(tier_name)
+
+    # set next goal if any
+    next_tier = {
+      TierName.BRONZE: TierName.SILVER,
+      TierName.SILVER: TierName.GOLD,
+      TierName.GOLD: TierName.PLATINUM
+    }.get(tier_name)
+    if next_tier and next_tier in milestone.tiers:
+      mp.next_goal = milestone.tiers[next_tier].value
+    else:
+      mp.next_goal = None
+
+    await current_user.save()
+    return {
+      "message": f"{tier_name} tier redeemed",
+      "new_balance": current_user.coins
+    }

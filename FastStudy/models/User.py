@@ -16,6 +16,8 @@ class ChallengeProgress(BaseModel):
     challenge_id: Link[Challenge]
     progress: int = 0
     is_completed: bool = False
+    redeemed: bool = False
+    redeemed_at: Optional[datetime] = None
     last_updated: datetime = Field(default_factory=datetime.utcnow)
 
 class MilestoneProgress(BaseModel):
@@ -23,6 +25,7 @@ class MilestoneProgress(BaseModel):
     progress: int = 0
     current_tier: Optional[TierName] = None
     next_goal: Optional[int] = None
+    claimed_tiers: List[TierName] = []
 
 class StudyStat(BaseModel):
     date: datetime

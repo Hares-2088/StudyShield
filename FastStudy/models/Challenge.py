@@ -35,6 +35,5 @@ class ProgressUnit(str, Enum):
     BLOCKS = "blocks"
 
 class TierRequirement(BaseModel):
-    value: int  # hours, days, or blocks depending on milestone type
+    value: int
     coins: int
-    claimed: bool = False

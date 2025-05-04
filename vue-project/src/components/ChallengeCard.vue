@@ -41,6 +41,11 @@
                     Complete
                 </template>
             </button>
+
+            <button v-if="challenge.isCompleted && !challenge.redeemed" @click="$emit('redeem', challenge.id)"
+                class="mt-4 w-full py-2 px-4 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors">
+                Redeem
+            </button>
         </div>
     </div>
 </template>
@@ -60,7 +65,7 @@ const props = defineProps({
     }
 });
 
-defineEmits(['complete']);
+defineEmits(['complete', 'redeem']);
 
 // Calculate coin value with bonus if applicable
 const displayCoinValue = computed(() => {

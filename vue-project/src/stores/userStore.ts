@@ -223,6 +223,24 @@ export const useUserStore = defineStore('user', () => {
     }
   };
 
+  const redeemChallenge = async (challengeId: string) => {
+    try {
+      await apiClient.post(`/users/${user.value?.id}/challenges/${challengeId}/redeem`);
+      await fetchUserData(); // Refresh coins & progress
+    } catch (error) {
+      console.error('Error redeeming challenge:', error);
+    }
+  };
+
+  const redeemMilestone = async (milestoneId: string, tier: string) => {
+    try {
+      await apiClient.post(`/users/${user.value?.id}/milestones/${milestoneId}/redeem/${tier}`);
+      await fetchUserData(); // Refresh coins & progress
+    } catch (error) {
+      console.error('Error redeeming milestone:', error);
+    }
+  };
+
   const logout = () => {
     user.value = null;
     blockedSites.value = [];
@@ -271,6 +289,8 @@ export const useUserStore = defineStore('user', () => {
     updateFocusTime,
     addBlockedSite,
     removeBlockedSite,
+    redeemChallenge,
+    redeemMilestone,
     logout,
   };
 });
