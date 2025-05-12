@@ -61,6 +61,17 @@ async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(
             detail="Internal server error"
         )
 
+@router.post("/logout", status_code=status.HTTP_200_OK)
+async def logout(token: str = Depends(oauth2_scheme)):
+    """
+    “Logout” just returns 200. The client should delete its stored token.
+    If you want true revocation, you’d save this token’s jti in a blacklist.
+    """
+    # Example of how you _could_ start a blacklist:
+    # jti = decode_jwt_and_get_jti(token)
+    # await TokenBlacklist(jti=jti).insert()
+    return {"detail": "Successfully logged out"}
+
 @router.post("/register", response_model=Token, status_code=status.HTTP_201_CREATED)
 async def register_user(req: RegisterRequest):
     # 1) Check for existing
