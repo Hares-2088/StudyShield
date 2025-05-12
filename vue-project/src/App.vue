@@ -44,17 +44,28 @@ onMounted(async () => {
     }
   }
 
-  if (auth.checkAuth()) {
-    try {
-      await auth.fetchUser()                      
-      const me = auth.user.value
-      if (me?.id) {
-        await userStore.fetchUserData()
-        await userStore.fetchStudySessions()
+  try {
+    const isAuth = await auth.checkAuth();
+    console.log('App mounted - isAuthenticated:', isAuth);
+
+    if (isAuth) {
+      try {
+        await auth.fetchUser();
+        const me = auth.user.value;
+        console.log('Fetched user:', me);
+
+        if (me?.id) {
+          await userStore.fetchUserData();
+          await userStore.fetchStudySessions();
+        }
+      } catch (err) {
+        console.error('Failed to fetch user data:', err);
       }
-    } catch (err) {
-      console.error('Failed to hydrate on start:', err)
+    } else {
+      console.warn('User is not authenticated.');
     }
+  } catch (err) {
+    console.error('Failed to check authentication:', err);
   }
 })
 </script>

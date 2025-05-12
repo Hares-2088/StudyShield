@@ -57,17 +57,38 @@ export function useAuth() {
         }
     };
 
-    const logout = () => {
+    const logout = async () => {
+    try {
+        // tell the server we’re logging out (optional)
+        await apiClient.post('/auth/logout');
+    } catch (err) {
+        // even if it fails, we’ll still clear the token client-side
+        console.warn('Logout endpoint failed:', err);
+    } finally {
+        // 🔑 remove the token so no further calls are authenticated
         localStorage.removeItem('access_token');
         isAuthenticated.value = false;
         user.value = null;
-        router.push('/login'); // Redirect to login page
+
+        // redirect to login or home
+        router.push({ name: 'Login' });
+    }
     };
 
-    const checkAuth = () => {
-        const token = localStorage.getItem('access_token');
-        isAuthenticated.value = !!token;
-        return isAuthenticated.value;
+    const checkAuth = async () => {
+        try {
+            const response = await apiClient.get('/users/me'); // Replace with your actual API endpoint
+            if (response.status === 200 && response.data) {
+                isAuthenticated.value = true;
+                user.value = response.data;
+                return true;
+            }
+        } catch (error) {
+            console.error('Authentication check failed:', error);
+            isAuthenticated.value = false;
+            user.value = null;
+            return false;
+        }
     };
 
     const fetchUser = async () => {
@@ -104,6 +125,7 @@ export function useAuth() {
 
         } catch (error) {
             console.error('Failed to fetch user:', error);
+            user.value = null;
         }
     };
 

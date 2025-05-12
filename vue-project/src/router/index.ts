@@ -63,14 +63,23 @@ const router = createRouter({
 
 router.beforeEach(async (to, from, next) => {
   const { checkAuth } = useAuth();
-  const isAuth = await checkAuth(); // Ensure checkAuth is awaited if it returns a Promise
 
-  if (to.meta.requiresAuth && !isAuth) {
-    next('/login'); // Redirect to login if not authenticated
-  } else if ((to.path === '/login' || to.path === '/register') && isAuth) {
-    next('/dashboard'); // Redirect to dashboard if already authenticated
-  } else {
-    next(); // Allow navigation for other cases
+  try {
+    const isAuth = await checkAuth(); // Ensure checkAuth is awaited if it returns a Promise
+    console.log('Authentication status:', isAuth);
+
+    if (to.path === '/' && !isAuth) {
+      next('/login'); // Redirect root path to login if not authenticated
+    } else if (to.meta.requiresAuth && !isAuth) {
+      next('/login'); // Redirect to login if not authenticated
+    } else if ((to.path === '/login' || to.path === '/register') && isAuth) {
+      next('/dashboard'); // Redirect to dashboard if already authenticated
+    } else {
+      next(); // Allow navigation for other cases
+    }
+  } catch (error) {
+    console.error('Authentication check failed:', error);
+    next('/login'); // Redirect to login if an error occurs during authentication check
   }
 });
 
