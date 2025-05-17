@@ -62,16 +62,18 @@ export const useUserStore = defineStore('user', () => {
       `/study-sessions/${currentSession.value._id}/pause`
     );
     stopHeartbeat();
-    await fetchUserData();   // refresh session state (is_paused)
-  }
+    // just flip the flag locally
+    currentSession.value.isPaused = true;
+  
+    }
 
   // resume the current session
   async function resumeCurrentSession() {
     if (!currentSession.value) return;
     await apiClient.post(
-      `/study-sessions/${currentSession.value._id}/resume`
+      `/study-sessions/${currentSession.value!._id}/resume`
     );
-    await fetchUserData();   // reload session
+    currentSession.value.isPaused = false;
     startHeartbeat();
   }
 
@@ -346,6 +348,7 @@ export const useUserStore = defineStore('user', () => {
     stopHeartbeat,
     startHeartbeat,
     createStudySession,
+    completeStudySession,
     studySessions,
     isLoggedIn,
     fetchUserData,

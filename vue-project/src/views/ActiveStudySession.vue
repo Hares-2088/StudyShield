@@ -82,8 +82,6 @@ import { useRoute, useRouter } from 'vue-router';
 import studySessionService from '@/api/studySessionService';
 import { useUserStore } from '@/stores/userStore';
 
-import apiClient from '@/api/apiClient';
-
 
 interface Task { name: string; duration: number; completed: boolean; }
 
@@ -144,33 +142,46 @@ function pauseSession() {
     session.isPaused = true;
 }
 
- async function resumeSession() {
-   clearInterval(timerHandle);
-   const id = route.params.sessionId as string;
-   try {
-     await apiClient.post(`/study-sessions/${id}/resume`);
-     session.isPaused = false;
-     // restart your timer
-     timerHandle = window.setInterval(() => elapsedSeconds.value++, 1000);
-   } catch (err) {
-     console.error('Resume failed:', err);
-   }
- }
-// Modify finishSession to ensure session state is handled properly
-async function finishSession() {
+  async function resumeSession() {
+    // stop your UI timer
     clearInterval(timerHandle);
-    const actualMins = Math.floor(elapsedSeconds.value / 60);
+
     try {
-        await studySessionService.completeStudySession(route.params.sessionId as string, actualMins, 0);
-        randomMessage.value = encouragementMessages[Math.floor(Math.random() * encouragementMessages.length)];
-        randomImage.value = catStickerImages[Math.floor(Math.random() * catStickerImages.length)];
-        showEncouragement.value = true;
+      // 1) resume on the back end
+      await userStore.resumeCurrentSession();
+
+      // 2) flip your UI flag
+      session.isPaused = false;
+
+      // 3) (re)start the store‐level heartbeat
+      console.log("🔁 Restarting heartbeat…");
+      userStore.startHeartbeat();
+
+      // 4) restart your local elapsed‐seconds timer
+      timerHandle = window.setInterval(() => {
+        elapsedSeconds.value++;
+      }, 1000);
+
     } catch (e) {
-        console.error(e);
-    } finally {
-        session.isPaused = false; // Reset session state
+      console.error("❌ Could not resume session:", e);
     }
-}
+  }
+// Modify finishSession to ensure session state is handled properly
+ async function finishSession() {
+   // 1) stop your UI timer
+   clearInterval(timerHandle);
+
+   // 2) let the store finish the session (it will stop the heartbeat too)
+   await userStore.completeStudySession(
+     route.params.sessionId as string,
+     Math.floor(elapsedSeconds.value / 60)
+   );
+
+   // 3) show your encouragement modal
+   randomMessage.value = encouragementMessages[Math.floor(Math.random() * encouragementMessages.length)];
+   randomImage.value   = catStickerImages[Math.floor(Math.random() * catStickerImages.length)];
+   showEncouragement.value = true;
+ }
 
 function closeEncouragement() {
     showEncouragement.value = false;

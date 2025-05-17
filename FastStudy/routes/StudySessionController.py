@@ -87,7 +87,7 @@ async def create_study_session(
       "end_time": session.end_time and session.end_time.isoformat(),
       "is_paused": session.is_paused,
       "paused_at": session.paused_at and session.paused_at.isoformat(),
-      "total_paused": int(session.total_paused.total_seconds()),
+      "total_paused": session.total_paused,
       "distractions_blocked": session.distractions_blocked,
       "notes": session.notes,
     }
@@ -159,7 +159,7 @@ async def resume_session(
         raise HTTPException(400, "Not paused")
 
     paused_time = datetime.utcnow() - session.paused_at
-    session.total_paused += int(paused_time.total_seconds())
+    session.total_paused += int(paused_time.total_seconds())  # int += int
     session.is_paused = False
     session.paused_at = None
     await session.save()

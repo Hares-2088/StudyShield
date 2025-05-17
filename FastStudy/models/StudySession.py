@@ -1,5 +1,5 @@
 from typing import List, Optional
-from datetime import datetime, timedelta
+from datetime import datetime
 
 from beanie import Document, Link
 from pydantic import BaseModel, Field
@@ -22,7 +22,7 @@ class StudySession(Document):
 
     is_paused: bool = False
     paused_at: Optional[datetime] = None
-    total_paused: timedelta = timedelta(0)
+    total_paused: int = Field(0, description="accumulated pause time, in seconds")
     last_heartbeat: datetime = Field(default_factory=datetime.utcnow)
 
     distractions_blocked: int = 0
