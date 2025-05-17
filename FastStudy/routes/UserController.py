@@ -1,5 +1,6 @@
 from fastapi import APIRouter, HTTPException, Depends
 from auth.dependencies import get_current_user
+from models import StudySession
 from models.User import User, ChallengeProgress, MilestoneProgress, StudyStat, UserRole
 from models.Challenge import Challenge, ChallengeType, TierName
 from models.Milestone import Milestone
@@ -34,6 +35,7 @@ class UserOut(BaseModel):
     today_focus_time: int = 0
     monthly_focus_time: int = 0
     study_stats: List[StudyStat] = []
+    current_session: Optional[Link[StudySession]] = None
     is_active: bool = True
     role: UserRole = UserRole.USER
     last_login: Optional[datetime] = None
@@ -118,7 +120,12 @@ async def read_current_user(current_user: User = Depends(get_current_user)):
 
     # persist + load links for the front end
     await current_user.save()
+    # load purchased items
     await current_user.fetch_link("purchased_items")
+      # load the in‑flight study session, if any
+
+    if current_user.current_session:
+        await current_user.fetch_link("current_session")
 
     # build the dict that Pydantic will serialise
     user_dict = current_user.dict(by_alias=True)
@@ -127,6 +134,13 @@ async def read_current_user(current_user: User = Depends(get_current_user)):
         item.dict(by_alias=True)
         for item in current_user.purchased_items
     ]
+
+    # overwrite current_session with the *actual* document (or null)
+    if current_user.current_session:
+        # .current_session is now the full StudySession document
+        user_dict["current_session"] = current_user.current_session.dict(by_alias=True)
+    else:
+        user_dict["current_session"] = None
 
     return user_dict
 

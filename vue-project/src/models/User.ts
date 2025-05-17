@@ -1,5 +1,6 @@
 import type { ShopItem } from './ShopItem';
 import type { TierName } from './Milestone';
+import type { StudySession } from './StudySession'; // Assuming StudySession is defined in this file
 
 export interface ChallengeProgress {
     challenge_id: string; // ID of the challenge
@@ -44,4 +45,5 @@ export interface User {
     isActive?: boolean; // Optional, for admin functionality
     role?: 'user' | 'admin'; // Optional, for role-based functionality
     lastLogin?: string; // ISO string, optional
+    current_session?: StudySession; // Optional, represents the current study session
 }

@@ -46,7 +46,8 @@ const routes: Array<RouteRecordRaw> = [
     path: '/active-session/:sessionId',
     name: 'ActiveStudySession',
     component: ActiveStudySession,
-    meta: { requiresAuth: true }
+    meta: { requiresAuth: true },
+    props: true
   },
   {
     path: '/profile',

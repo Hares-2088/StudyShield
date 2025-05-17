@@ -1,25 +1,37 @@
-from beanie import Document
-from pydantic import BaseModel
 from typing import List, Optional
-from datetime import datetime
+from datetime import datetime, timedelta
 
-from models import User
-
+from beanie import Document, Link
+from pydantic import BaseModel, Field
 
 class Task(BaseModel):
     name: str
-    duration: int  # minutes
+    duration: int
     completed: bool = False
 
 class StudySession(Document):
-    user: "User"
+    # forward‐ref string, no import here
+    user: Link["User"]
+
     tasks: List[Task]
-    planned_duration: int  # minutes
+    planned_duration: int
     actual_duration: Optional[int] = None
+
     start_time: datetime
     end_time: Optional[datetime] = None
+
+    is_paused: bool = False
+    paused_at: Optional[datetime] = None
+    total_paused: timedelta = timedelta(0)
+    last_heartbeat: datetime = Field(default_factory=datetime.utcnow)
+
     distractions_blocked: int = 0
     notes: Optional[str] = None
 
     class Settings:
         name = "study_sessions"
+
+# at bottom, teach Pydantic about User
+from models.User import User
+StudySession.model_rebuild()
+# to avoid circular import issues

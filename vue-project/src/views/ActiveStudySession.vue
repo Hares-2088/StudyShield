@@ -41,6 +41,19 @@
             </li>
         </transition-group>
 
+        <!-- Pause/Resume Buttons -->
+        <div v-if="session.isPaused" class="mb-4">
+            <button @click="resumeSession" class="btn-resume bg-green-500 text-white py-2 px-4 rounded-lg hover:bg-green-600 transition">
+                Resume
+            </button>
+        </div>
+        <div v-else class="mb-4">
+            <button @click="pauseSession" class="btn-pause bg-yellow-500 text-white py-2 px-4 rounded-lg hover:bg-yellow-600 transition">
+                Pause
+            </button>
+        </div>
+
+        <!-- Finish Button -->
         <button @click="finishSession" class="w-full bg-gradient-to-r from-[#A2D2FF] to-[#FFAFCC] text-white py-3 rounded-lg
                hover:from-[#A2D2FF]/90 hover:to-[#FFAFCC]/90 active:scale-95 transition-all shadow-md">
             Finish Session
@@ -67,6 +80,10 @@
 import { ref, computed, onUnmounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import studySessionService from '@/api/studySessionService';
+import { useUserStore } from '@/stores/userStore';
+
+import apiClient from '@/api/apiClient';
+
 
 interface Task { name: string; duration: number; completed: boolean; }
 
@@ -105,11 +122,15 @@ const formattedTime = computed(() => {
     return `${m}:${s}`;
 });
 
+const userStore = useUserStore();
+const session = userStore.currentSession!;
+
 async function fetchSessionData() {
     try {
         const id = route.params.sessionId as string;
         const session = await studySessionService.getStudySession(id);
         tasks.value = session.tasks.map(t => ({ ...t, completed: !!t.completed }));
+        userStore.currentSession = session;
         plannedDuration.value = session.plannedDuration; // <-- This is where plannedDuration is set
         timerHandle = window.setInterval(() => elapsedSeconds.value++, 1000);
     } catch (e) {
@@ -117,6 +138,25 @@ async function fetchSessionData() {
     }
 }
 
+function pauseSession() {
+    clearInterval(timerHandle);
+    userStore.pauseCurrentSession();
+    session.isPaused = true;
+}
+
+ async function resumeSession() {
+   clearInterval(timerHandle);
+   const id = route.params.sessionId as string;
+   try {
+     await apiClient.post(`/study-sessions/${id}/resume`);
+     session.isPaused = false;
+     // restart your timer
+     timerHandle = window.setInterval(() => elapsedSeconds.value++, 1000);
+   } catch (err) {
+     console.error('Resume failed:', err);
+   }
+ }
+// Modify finishSession to ensure session state is handled properly
 async function finishSession() {
     clearInterval(timerHandle);
     const actualMins = Math.floor(elapsedSeconds.value / 60);
@@ -125,7 +165,11 @@ async function finishSession() {
         randomMessage.value = encouragementMessages[Math.floor(Math.random() * encouragementMessages.length)];
         randomImage.value = catStickerImages[Math.floor(Math.random() * catStickerImages.length)];
         showEncouragement.value = true;
-    } catch (e) { console.error(e); }
+    } catch (e) {
+        console.error(e);
+    } finally {
+        session.isPaused = false; // Reset session state
+    }
 }
 
 function closeEncouragement() {
@@ -133,7 +177,12 @@ function closeEncouragement() {
     router.push('/start-session');
 }
 
-onUnmounted(() => clearInterval(timerHandle));
+// Ensure session state is reset on unmount
+onUnmounted(() => {
+    clearInterval(timerHandle);
+    session.isPaused = false;
+});
+
 fetchSessionData();
 </script>
 

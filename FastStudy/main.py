@@ -80,7 +80,7 @@ from routes.UserController import router as user_router
 from routes.ChallengeController import router as challenge_router
 from routes.ItemController import router as item_router
 from routes.MilestoneController import router as milestone_router
-from routes.StudySession import router as study_session_router
+from routes.StudySessionController import router as study_session_router
 from auth.routes import router as auth_router
 
 app.include_router(user_router)

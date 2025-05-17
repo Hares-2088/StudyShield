@@ -5,7 +5,9 @@ import { useRouter } from 'vue-router';
 
 import type { User, ChallengeProgress, MilestoneProgress, StudyStat } from '../models/User';
 import type { ShopItem } from '../models/ShopItem';
-import type { StudySession } from '../models/StudySession';
+import type { StudySession } from '../models/StudySession'; // Assuming Task is part of StudySession or in its own file e.g., ../models/Task
+import studySessionService from '../api/studySessionService'; // Assuming you have a service for handling study sessions
+import type { Task } from '../models/Task'; // Assuming Task is part of StudySession or in its own file e.g., ../models/Task
 
 export const useUserStore = defineStore('user', () => {
   const router = useRouter();
@@ -24,8 +26,55 @@ export const useUserStore = defineStore('user', () => {
   const monthlyStudyHours = ref(0);
   const coins = ref(0);
   const studySessions = ref<StudySession[]>([]);
+  const currentSession = ref<StudySession | null>(null);
 
   const isLoggedIn = computed(() => !!user.value);
+
+  let heartbeatHandle: number | null = null;
+
+  // start sending a heartbeat every 10s
+  function startHeartbeat() {
+    stopHeartbeat();
+    if (!currentSession.value) return;
+    heartbeatHandle = window.setInterval(async () => {
+      try {
+        await apiClient.post(
+          `/study-sessions/${currentSession.value!._id}/heartbeat`
+        );
+      } catch (e) {
+        console.warn('Heartbeat failed', e);
+      }
+    }, 10_000);
+  }
+
+  // stop the heartbeat
+  function stopHeartbeat() {
+    if (heartbeatHandle !== null) {
+      clearInterval(heartbeatHandle);
+      heartbeatHandle = null;
+    }
+  }
+
+  // pause the current session
+  async function pauseCurrentSession() {
+    if (!currentSession.value) return;
+    await apiClient.post(
+      `/study-sessions/${currentSession.value._id}/pause`
+    );
+    stopHeartbeat();
+    await fetchUserData();   // refresh session state (is_paused)
+  }
+
+  // resume the current session
+  async function resumeCurrentSession() {
+    if (!currentSession.value) return;
+    await apiClient.post(
+      `/study-sessions/${currentSession.value._id}/resume`
+    );
+    await fetchUserData();   // reload session
+    startHeartbeat();
+  }
+
 
   const fetchUserData = async () => {
     try {
@@ -80,6 +129,7 @@ export const useUserStore = defineStore('user', () => {
         monthlyFocusTime: d.monthly_focus_time,
         studyStats: d.study_stats,
         isPhoneLockEnabled: d.is_phone_lock_enabled ?? false,
+        current_session: d.current_session,
         isActive: d.is_active,
         role: d.role,
         lastLogin: d.last_login
@@ -97,6 +147,7 @@ export const useUserStore = defineStore('user', () => {
       streak_multiplier.value = user.value.streak_multiplier;
       weeklyStudyHours.value = user.value.weeklyFocusTime;
       monthlyStudyHours.value = user.value.monthlyFocusTime;
+      currentSession.value = user.value.current_session ?? null;
       coins.value = user.value.coins;
 
     } catch (error) {
@@ -126,14 +177,26 @@ export const useUserStore = defineStore('user', () => {
     }
   };
 
-  const createStudySession = async (session: Partial<StudySession>) => {
-    try {
-      const response = await apiClient.post(`/users/${user.value?.id}/study-sessions`, session);
-      studySessions.value.push(response.data);
-    } catch (error) {
-      console.error('Error creating study session:', error);
-    }
-  };
+  async function createStudySession(tasks: Task[]) {
+    const planned = tasks.reduce((sum, t) => sum + t.duration, 0);
+
+    console.log('store: about to call service.createStudySession with', tasks, 'planned=', planned);
+    const session = await studySessionService.createStudySession(tasks, planned);
+    console.log('store: got session back →', session);
+
+    currentSession.value = session;
+    startHeartbeat();
+
+    return session;
+  }
+
+  // in completeStudySession (or in your finishSession call):
+  async function completeStudySession(sessionId: string, actualMins: number) {
+    stopHeartbeat();
+    await studySessionService.completeStudySession(sessionId, actualMins, 0);
+    currentSession.value = null;
+    await fetchUserData();  // will clear it on the backend
+  }
 
   const updateStudySession = async (sessionId: string, updates: Partial<StudySession>) => {
     try {
@@ -255,6 +318,7 @@ export const useUserStore = defineStore('user', () => {
     todayFocusTime.value = 0;
     weeklyStudyHours.value = 0;
     monthlyStudyHours.value = 0;
+    currentSession.value = null;
     coins.value = 0;
     studySessions.value = [];
     console.log('Logged out locally');
@@ -276,11 +340,16 @@ export const useUserStore = defineStore('user', () => {
     todayFocusTime,
     monthlyStudyHours,
     coins,
+    currentSession,
+    pauseCurrentSession,
+    resumeCurrentSession,
+    stopHeartbeat,
+    startHeartbeat,
+    createStudySession,
     studySessions,
     isLoggedIn,
     fetchUserData,
     fetchStudySessions,
-    createStudySession,
     updateStudySession,
     addCoins,
     updateChallengeProgress,

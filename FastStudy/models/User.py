@@ -1,9 +1,10 @@
 from enum import Enum
+from typing import List, Optional
+from datetime import datetime
 
 from beanie import Document, Link
-from pydantic import EmailStr, BaseModel, Field
-from typing import List, Optional, Dict
-from datetime import datetime
+from pydantic import BaseModel, Field, EmailStr
+
 from models.Challenge import Challenge, TierName
 from models.ShopItem import ShopItem
 from models.Milestone import Milestone
@@ -29,28 +30,35 @@ class MilestoneProgress(BaseModel):
 
 class StudyStat(BaseModel):
     date: datetime
-    focus_time: int  # in minutes
+    focus_time: int
     sessions: int
     distractions_blocked: int = 0
 
 class User(Document):
     name: str
     email: EmailStr
-    password: str  # This stores the hashed password despite the name
+    password: str
     coins: int = 0
     day_streak: int = 0
     longest_streak: int = 0
     streak_multiplier: float = 1
     last_active_date: Optional[datetime] = None
+
     challenges: List[ChallengeProgress] = []
     milestones: List[MilestoneProgress] = []
     purchased_items: List[Link[ShopItem]] = []
     blocked_websites: List[str] = []
-    total_focus_time: int = 0  # in minutes
+
+    total_focus_time: int = 0
     weekly_focus_time: int = 0
     today_focus_time: int = 0
     monthly_focus_time: int = 0
+
     study_stats: List[StudyStat] = []
+
+    # forward‐ref string, no import here
+    current_session: Optional[Link["StudySession"]] = None
+
     is_active: bool = True
     role: UserRole = UserRole.USER
     last_login: Optional[datetime] = None
@@ -61,7 +69,10 @@ class User(Document):
 
     @classmethod
     async def create_user(cls, user_data: dict):
-        """Helper method for properly creating users with hashed passwords"""
         from auth.utils import get_password_hash
-        user_data['password'] = get_password_hash(user_data['password'])
+        user_data["password"] = get_password_hash(user_data["password"])
         return await cls(**user_data).create()
+
+# at bottom, teach Pydantic about StudySession
+from models.StudySession import StudySession
+User.model_rebuild()
