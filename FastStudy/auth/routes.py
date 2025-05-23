@@ -1,7 +1,13 @@
+from typing import Optional
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.logger import logger
+from fastapi.params import Cookie
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from datetime import timedelta, datetime
+from fastapi import Response
+
+from jose import jwt
 
 from models import User
 from .dependencies import get_current_user
@@ -9,7 +15,7 @@ from .models import Token, UserCreate, RegisterRequest
 from .utils import (
     verify_password,
     create_access_token,
-    ACCESS_TOKEN_EXPIRE_MINUTES, get_password_hash
+    ACCESS_TOKEN_EXPIRE_MINUTES, get_password_hash, SECRET_KEY, ALGORITHM
 )
 
 router = APIRouter(prefix="/auth", tags=["Auth"])
@@ -27,34 +33,36 @@ async def authenticate_user(email: str, password: str):
     return user
 
 @router.post("/token", response_model=Token)
-async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends()):
+async def login_for_access_token(
+    response: Response,
+    form_data: OAuth2PasswordRequestForm = Depends()
+):
     try:
         user = await User.find_one(User.email == form_data.username)
         if not user or not verify_password(form_data.password, user.password):
-            # Bad creds → 401
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Incorrect email or password",
                 headers={"WWW-Authenticate": "Bearer"},
             )
 
-        # Good creds → issue token
-        access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-        access_token = create_access_token(
-            data={"sub": user.email}, expires_delta=access_token_expires
-        )
+        access_token  = create_access_token(data={"sub": user.email},    expires_delta=timedelta(minutes=30))
+        refresh_token = create_access_token(data={"sub": user.email},    expires_delta=timedelta(days=7))
 
-        # Update last_login
-        user.last_login = datetime.utcnow()
-        await user.save()
+        # Now we can set a cookie on the response:
+        response.set_cookie(
+            key="refresh_token",
+            value=refresh_token,
+            httponly=True,
+            secure=False,       # set to False in dev if you’re not on HTTPS
+            samesite="none",    # adjust per your needs
+        )
 
         return {"access_token": access_token, "token_type": "bearer"}
 
     except HTTPException:
-        # Re-raise 401 or any other HTTPExceptions
         raise
     except Exception:
-        # Unexpected error → 500
         logger.exception("💥 Error in /auth/token")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -88,10 +96,25 @@ async def register_user(req: RegisterRequest):
     token = create_access_token({"sub": new_user.email}, expires_delta=expires)
     return {"access_token": token, "token_type": "bearer"}
 
-@router.post("/refresh")
-async def refresh_token(current_user: User = Depends(get_current_user)):
-    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    access_token = create_access_token(
-        data={"sub": current_user.email}, expires_delta=access_token_expires
-    )
-    return {"access_token": access_token, "token_type": "bearer"}
+@router.post(
+  "/refresh",
+  response_model=Token,
+  summary="Refresh access_token using the httponly refresh_token cookie"
+)
+async def refresh_token(
+  refresh_token: Optional[str] = Cookie(None, alias="refresh_token")
+):
+  if not refresh_token:
+    raise HTTPException(401, "Missing refresh token")
+  payload = jwt.decode(refresh_token, SECRET_KEY, algorithms=[ALGORITHM])
+  email = payload.get("sub")
+  if not email:
+    raise HTTPException(401, "Invalid token")
+  user = await User.find_one(User.email == email)
+  if not user:
+    raise HTTPException(401, "Unknown user")
+  access_token = create_access_token(
+    data={"sub": email},
+    expires_delta=timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+  )
+  return {"access_token": access_token, "token_type": "bearer"}

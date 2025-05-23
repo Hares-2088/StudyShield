@@ -22,35 +22,37 @@ function mapSession(raw: RawStudySession): StudySession {
 }
 
 export default {
-    async getStudySessions(userId: string): Promise<StudySession[]> {
+  async getStudySessions(userId: string): Promise<StudySession[]> {
     const response = await apiClient.get('/study-sessions/', {
       params: { user_id: userId }
     });
-    return response.data;
+    // Map each session
+    return response.data.map(mapSession);
   },
 
   async getStudySession(sessionId: string): Promise<StudySession> {
     const response = await apiClient.get(`/study-sessions/${sessionId}`);
-    return response.data;
+    // Map the session
+    return mapSession(response.data);
   },
 
 
-async createStudySession(tasks: Task[], plannedDuration: number): Promise<StudySession> {
-  console.log("service → POST /study-sessions/ body:", { tasks, planned_duration: plannedDuration });
-  try {
-    const resp = await apiClient.post<RawStudySession>('/study-sessions/', {
-      tasks,
-      planned_duration: plannedDuration,
-    });
-    console.log("service ← raw response data:", resp.data);
-    const mapped = mapSession(resp.data);
-    console.log("service → mapped session:", mapped);
-    return mapped;
-  } catch (err: any) {
-    console.error("service ✖ error posting study-session:", err.response?.data || err);
-    throw err;
-  }
-},
+  async createStudySession(tasks: Task[], plannedDuration: number): Promise<StudySession> {
+    console.log("service → POST /study-sessions/ body:", { tasks, planned_duration: plannedDuration });
+    try {
+      const resp = await apiClient.post<RawStudySession>('/study-sessions/', {
+        tasks,
+        planned_duration: plannedDuration,
+      });
+      console.log("service ← raw response data:", resp.data);
+      const mapped = mapSession(resp.data);
+      console.log("service → mapped session:", mapped);
+      return mapped;
+    } catch (err: any) {
+      console.error("service ✖ error posting study-session:", err.response?.data || err);
+      throw err;
+    }
+  },
 
   async completeStudySession(
     sessionId: string,

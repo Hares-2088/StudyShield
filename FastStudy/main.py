@@ -44,12 +44,18 @@ async def __debug():
 
 
 # ─── CORS ───────────────────────────────────────────────────────────
+origins = [
+"http://localhost:5173",
+"http://127.0.0.1:5173",
+"https://focusbuddy.study"
+]
+
 app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_methods=["*"],
-    allow_headers=["*"],
-    allow_credentials=False,
+CORSMiddleware,
+allow_origins=origins,
+allow_methods=["*"],
+allow_headers=["*"],
+allow_credentials=True,
 )
 
 

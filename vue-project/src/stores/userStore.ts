@@ -64,8 +64,8 @@ export const useUserStore = defineStore('user', () => {
     stopHeartbeat();
     // just flip the flag locally
     currentSession.value.isPaused = true;
-  
-    }
+
+  }
 
   // resume the current session
   async function resumeCurrentSession() {
@@ -98,9 +98,15 @@ export const useUserStore = defineStore('user', () => {
           try {
             const res = await apiClient.get<ShopItem>(`/shop/items/${itemId}`);
             return res.data;
-          } catch (err) {
-            console.warn(`Couldn’t fetch ShopItem ${itemId}`, err);
-            return null;
+          } catch (err: any) {
+            if (err.response?.status === 401) {
+              // invalid or expired token
+              localStorage.removeItem('access_token')
+              delete apiClient.defaults.headers.common['Authorization']
+              router.push({ name: 'Login' })
+            } else {
+              console.error('Error fetching user data:', err)
+            }
           }
         });
         const settled = await Promise.allSettled(fetches);
@@ -172,8 +178,8 @@ export const useUserStore = defineStore('user', () => {
 
   const fetchStudySessions = async () => {
     try {
-      const { data } = await apiClient.get<StudySession[]>('/study-sessions');
-      studySessions.value = data;
+      // Use service to get mapped sessions
+      studySessions.value = await studySessionService.getStudySessions(user.value?.id || '');
     } catch (error) {
       console.error('Error fetching study sessions:', error);
     }
@@ -186,7 +192,7 @@ export const useUserStore = defineStore('user', () => {
     const session = await studySessionService.createStudySession(tasks, planned);
     console.log('store: got session back →', session);
 
-    currentSession.value = session;
+    currentSession.value = session; // already mapped
     startHeartbeat();
 
     return session;

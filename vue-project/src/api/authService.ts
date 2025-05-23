@@ -31,6 +31,9 @@ export function useAuth() {
             );
 
             localStorage.setItem('access_token', response.data.access_token);
+            apiClient.defaults.headers.common['Authorization'] = `Bearer ${response.data.access_token}`
+
+
             isAuthenticated.value = true;
 
             // Fetch user data and update the userStore
@@ -58,21 +61,21 @@ export function useAuth() {
     };
 
     const logout = async () => {
-    try {
-        // tell the server we’re logging out (optional)
-        await apiClient.post('/auth/logout');
-    } catch (err) {
-        // even if it fails, we’ll still clear the token client-side
-        console.warn('Logout endpoint failed:', err);
-    } finally {
-        // 🔑 remove the token so no further calls are authenticated
-        localStorage.removeItem('access_token');
-        isAuthenticated.value = false;
-        user.value = null;
+        try {
+            // tell the server we’re logging out (optional)
+            await apiClient.post('/auth/logout');
+        } catch (err) {
+            // even if it fails, we’ll still clear the token client-side
+            console.warn('Logout endpoint failed:', err);
+        } finally {
+            // 🔑 remove the token so no further calls are authenticated
+            localStorage.removeItem('access_token');
+            isAuthenticated.value = false;
+            user.value = null;
 
-        // redirect to login or home
-        router.push({ name: 'Login' });
-    }
+            // redirect to login or home
+            router.push({ name: 'Login' });
+        }
     };
 
     const checkAuth = async () => {
