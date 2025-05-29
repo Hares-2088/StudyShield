@@ -80,7 +80,7 @@ export function useAuth() {
 
     const checkAuth = async () => {
         try {
-            const response = await apiClient.get('/users/me'); // Replace with your actual API endpoint
+            const response = await apiClient.get('/users/me'); 
             if (response.status === 200 && response.data) {
                 isAuthenticated.value = true;
                 user.value = response.data;

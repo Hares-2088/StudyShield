@@ -60,28 +60,38 @@ const routes: Array<RouteRecordRaw> = [
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes
-});
+})
 
-router.beforeEach(async (to, from, next) => {
-  const { checkAuth } = useAuth();
+router.beforeEach(async (to) => {
+  const token = localStorage.getItem('access_token')
+  const { checkAuth } = useAuth()
 
-  try {
-    const isAuth = await checkAuth(); // Ensure checkAuth is awaited if it returns a Promise
-    console.log('Authentication status:', isAuth);
-
-    if (to.path === '/' && !isAuth) {
-      next('/login'); // Redirect root path to login if not authenticated
-    } else if (to.meta.requiresAuth && !isAuth) {
-      next('/login'); // Redirect to login if not authenticated
-    } else if ((to.path === '/login' || to.path === '/register') && isAuth) {
-      next('/dashboard'); // Redirect to dashboard if already authenticated
-    } else {
-      next(); // Allow navigation for other cases
-    }
-  } catch (error) {
-    console.error('Authentication check failed:', error);
-    next('/login'); // Redirect to login if an error occurs during authentication check
+  // Public pages are always allowed
+  if (to.meta.requiresAuth === false) {
+    return true
   }
-});
 
-export default router;
+  // If no token, skip the network call and go to /login immediately
+  if (!token) {
+    return { name: 'Login' }
+  }
+
+  // Otherwise (we have a token) call checkAuth() once
+  const isAuth = await checkAuth()
+  console.log('guard:', to.fullPath, 'authenticated?', isAuth)
+
+  if (!isAuth) {
+    return { name: 'Login' }
+  }
+
+  // If you’re trying to visit /login or /register when already authed,
+  // send them to the dashboard
+  if ((to.name === 'Login' || to.name === 'Register') && isAuth) {
+    return { name: 'Dashboard' }
+  }
+
+  // All good
+  return true
+})
+
+export default router

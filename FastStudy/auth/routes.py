@@ -54,8 +54,9 @@ async def login_for_access_token(
             key="refresh_token",
             value=refresh_token,
             httponly=True,
-            secure=False,       # set to False in dev if you’re not on HTTPS
+            secure=True,       # set to False in dev if you’re not on HTTPS
             samesite="none",    # adjust per your needs
+            path="/",
         )
 
         return {"access_token": access_token, "token_type": "bearer"}
@@ -70,14 +71,18 @@ async def login_for_access_token(
         )
 
 @router.post("/logout", status_code=status.HTTP_200_OK)
-async def logout(token: str = Depends(oauth2_scheme)):
+async def logout(response: Response):
     """
-    “Logout” just returns 200. The client should delete its stored token.
-    If you want true revocation, you’d save this token’s jti in a blacklist.
+    Client can call this to “log out.”  We clear the httponly refresh_token cookie
+    and return 200 even if they weren’t logged in.
     """
-    # Example of how you _could_ start a blacklist:
-    # jti = decode_jwt_and_get_jti(token)
-    # await TokenBlacklist(jti=jti).insert()
+    # tell browser to delete the cookie
+    response.delete_cookie(
+        key="refresh_token",
+        path="/",
+        secure=True,     # match whatever you used when setting it
+        samesite="none",
+    )
     return {"detail": "Successfully logged out"}
 
 @router.post("/register", response_model=Token, status_code=status.HTTP_201_CREATED)
