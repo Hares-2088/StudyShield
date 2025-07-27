@@ -1,10 +1,8 @@
 from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel
 from typing import List, Optional
-from datetime import datetime
 from beanie import PydanticObjectId
 
-from main import logger
 from models.StudySession import StudySession, Task
 from models.User import User, StudyStat
 from auth.dependencies import get_current_user
@@ -72,11 +70,13 @@ async def create_study_session(
     )
     await session.insert()
 
-    # 2) pin it on the user
+    # 2) update users current session
     current_user.current_session = session
+
+    # 3) pin it on the user
     await current_user.save()
 
-    # 3) build a *pure* dict to return
+    # 4) build a *pure* dict to return
     payload = {
       "_id": str(session.id),
       "user": str(session.user.id),
@@ -204,3 +204,26 @@ async def heartbeat(
     session.last_heartbeat = datetime.utcnow()
     await session.save()
     return {"message": "Heartbeat received"}
+
+import asyncio
+from datetime import datetime, timedelta
+
+async def monitor_sessions():
+    while True:
+        cutoff = datetime.utcnow() - timedelta(seconds=30)
+
+        # Only sessions that are active, not paused, and not ended
+        sessions_to_pause = await StudySession.find({
+            "is_paused": False,
+            "end_time": None,
+            "last_heartbeat": {"$lt": cutoff}
+        }).to_list()
+
+        for session in sessions_to_pause:
+            session.is_paused = True
+            session.total_paused = int(session.total_paused or 0)  # safe conversion
+            session.paused_at = datetime.utcnow()
+            await session.save()
+            print(f"[monitor] Paused session {session.id} due to inactivity")
+
+        await asyncio.sleep(30)

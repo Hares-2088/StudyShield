@@ -1,15 +1,12 @@
-print("🐍  main.py HIT")
-
+import asyncio
 import datetime
 from _pydatetime import timedelta
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
 import logging
 import sys
 
-# your existing imports…
 from auth.utils import get_password_hash
 from config import Config
 from database import init_db
@@ -86,7 +83,7 @@ from routes.UserController import router as user_router
 from routes.ChallengeController import router as challenge_router
 from routes.ItemController import router as item_router
 from routes.MilestoneController import router as milestone_router
-from routes.StudySessionController import router as study_session_router
+from routes.StudySessionController import router as study_session_router, monitor_sessions
 from auth.routes import router as auth_router
 
 app.include_router(user_router)
@@ -219,18 +216,22 @@ async def seed_initial_data():
     except Exception as e:
         logger.error(f"❌ Error during data seeding: {str(e)}")
         raise
+
+
 @app.on_event("startup")
 async def startup_event():
     try:
         logger.info("Initializing database connection...")
         await init_db()
 
-        # Use Config instead of settings
-        if Config.DEBUG:  # Or add SEED_DATA to your Config
+        if Config.DEBUG:
             logger.info("Starting data seeding...")
             await seed_initial_data()
         else:
             logger.info("Skipping data seeding")
+
+        logger.info("Starting session monitor...")
+        asyncio.create_task(monitor_sessions())
 
     except Exception as e:
         logger.error(f"Startup failed: {str(e)}")

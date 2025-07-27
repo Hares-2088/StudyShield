@@ -60,10 +60,16 @@ export default {
     distractions_blocked = 0,
     notes?: string
   ) {
-    await apiClient.post(`/study-sessions/${sessionId}/complete`, {
+    const response = await apiClient.post(`/study-sessions/${sessionId}/complete`, {
       actual_duration,
       distractions_blocked,
       notes,
+    });
+    console.log(`Posted completion for session ${sessionId}:`, {
+      actual_duration,
+      distractions_blocked,
+      notes,
+      response: response.data,
     });
   }
 };

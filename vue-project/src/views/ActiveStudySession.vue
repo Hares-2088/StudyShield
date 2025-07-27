@@ -51,8 +51,7 @@
 
         <!-- Finish -->
         <button @click="finishSession" class="w-full bg-gradient-to-r from-[#A2D2FF] to-[#FFAFCC] text-white py-3 rounded-lg
-             hover:from-[#A2D2FF]/90 hover:to-[#FFAFCC]/90 active:scale-95 transition-all shadow-md">Finish
-            Session</button>
+             hover:from-[#A2D2FF]/90 hover:to-[#FFAFCC]/90 active:scale-95 transition-all shadow-md">Finish Session</button>
 
         <!-- Encouragement Modal -->
         <transition name="fade-scale">

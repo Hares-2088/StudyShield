@@ -56,6 +56,7 @@ class User(Document):
 
     study_stats: List[StudyStat] = []
 
+    #We are going to use this to track the current study session and make it optional
     # forward‐ref string, no import here
     current_session: Optional[Link["StudySession"]] = None
 
