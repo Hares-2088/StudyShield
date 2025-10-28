@@ -41,13 +41,6 @@ async def __debug():
 
 from fastapi.responses import JSONResponse
 
-@app.options("/{rest_of_path:path}")
-async def preflight_handler(rest_of_path: str):
-    """
-    Ensure every OPTIONS preflight returns 200 with correct headers.
-    """
-    return JSONResponse(content={"status": "ok"})
-
 # ─── CORS ───────────────────────────────────────────────────────────
 import re
 
