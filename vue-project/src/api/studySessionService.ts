@@ -36,6 +36,11 @@ export default {
     return mapSession(response.data);
   },
 
+  async getLastActiveSession(): Promise<StudySession | null> {
+    const response = await apiClient.get('/study-sessions/last-active-session');
+    // Map the session or return null if not found
+    return response.data ? mapSession(response.data) : null;
+  },
 
   async createStudySession(tasks: Task[], plannedDuration: number): Promise<StudySession> {
     console.log("service → POST /study-sessions/ body:", { tasks, planned_duration: plannedDuration });

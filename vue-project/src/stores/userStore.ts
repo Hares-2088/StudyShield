@@ -218,6 +218,27 @@ export const useUserStore = defineStore('user', () => {
     }
   };
 
+  const getLastActiveSession = async () => {
+    try {
+      const session = await studySessionService.getLastActiveSession();
+      if (session) {
+        currentSession.value = session;
+        return session;
+      } else {
+        console.log('No active session found');
+        return null;
+      }
+    } catch (error) {
+      console.error('Error fetching last active session:', error);
+      return null;
+    }
+  };
+
+  const checkForActiveSession = async () => {
+    const activeSession = await getLastActiveSession();
+    return activeSession;
+  };
+
   const addCoins = async (amount: number) => {
     try {
       const response = await apiClient.post(`/users/${user.value?.id}/add-coins`, { amount });
@@ -355,6 +376,8 @@ export const useUserStore = defineStore('user', () => {
     startHeartbeat,
     createStudySession,
     completeStudySession,
+    getLastActiveSession,
+    checkForActiveSession,
     studySessions,
     isLoggedIn,
     fetchUserData,

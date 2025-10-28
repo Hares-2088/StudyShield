@@ -208,6 +208,7 @@ async def heartbeat(
 import asyncio
 from datetime import datetime, timedelta
 
+# Background task to monitor sessions and auto-pause inactive ones
 async def monitor_sessions():
     while True:
         cutoff = datetime.utcnow() - timedelta(seconds=30)
@@ -227,3 +228,15 @@ async def monitor_sessions():
             print(f"[monitor] Paused session {session.id} due to inactivity")
 
         await asyncio.sleep(30)
+
+# Method to find the last session for a user that does not have an end time
+@router.get("/last-active-session", response_model=Optional[StudySession])
+async def get_last_active_session(
+    current_user: User = Depends(get_current_user)
+):
+    session = await StudySession.find_one(
+        StudySession.user.id == current_user.id,
+        StudySession.end_time == None
+    )
+    return session if session else None
+
