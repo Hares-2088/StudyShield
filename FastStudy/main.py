@@ -1,6 +1,7 @@
 import asyncio
 import datetime
 from _pydatetime import timedelta
+from urllib.request import Request
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -41,6 +42,7 @@ async def __debug():
 
 from fastapi.responses import JSONResponse
 
+
 # ─── CORS ───────────────────────────────────────────────────────────
 import re
 
@@ -51,6 +53,15 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+@app.middleware("http")
+async def force_cors_credentials(request: Request, call_next):
+    response = await call_next(request)
+    if request.headers.get("origin") and "focusbuddy.study" in request.headers["origin"]:
+        response.headers["Access-Control-Allow-Origin"] = request.headers["origin"]
+        response.headers["Access-Control-Allow-Credentials"] = "true"
+    return response
+
 
 # ─── 1) REQUEST/RESPONSE LOGGING ──────────────────────────────────
 from fastapi import Request
