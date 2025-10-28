@@ -39,21 +39,24 @@ async def __debug():
     print("🐞  __debug HIT")
     return {"debug": True}
 
+from fastapi.responses import JSONResponse
+
+@app.options("/{rest_of_path:path}")
+async def preflight_handler(rest_of_path: str):
+    """
+    Ensure every OPTIONS preflight returns 200 with correct headers.
+    """
+    return JSONResponse(content={"status": "ok"})
 
 # ─── CORS ───────────────────────────────────────────────────────────
-origins = [
-"http://localhost:5173",
-"http://127.0.0.1:5173",
-"https://focusbuddy.study",
-"https://focusbuddy.study/"
-]
+import re
 
 app.add_middleware(
-CORSMiddleware,
-allow_origins=origins,
-allow_methods=["*"],
-allow_headers=["*"],
-allow_credentials=True,
+    CORSMiddleware,
+    allow_origin_regex=r"^https://(?:www\.)?focusbuddy\.study$",
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 
