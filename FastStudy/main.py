@@ -53,12 +53,11 @@ import re
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origin_regex=r"^https://(?:www\.)?focusbuddy\.study$",
+    allow_origin_regex=r"^https://(?:www\.)?focusbuddy\.study/?$",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
 
 # ─── 1) REQUEST/RESPONSE LOGGING ──────────────────────────────────
 from fastapi import Request
